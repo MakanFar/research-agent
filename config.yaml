@@ -1,0 +1,4 @@
+# Configuration file for Paper Summarizer
+openai_api_key: "your-api-key-here"
+papers_directory: "path/to/your/papers"
+output_directory: "path/to/output"
