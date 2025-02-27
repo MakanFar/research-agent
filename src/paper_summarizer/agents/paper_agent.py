@@ -61,8 +61,10 @@ class PaperAgent:
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
                 
+                # Extract text content from initial chunks
+                text_chunks = [chunk.page_content for chunk in chunks]
+                
                 # Use vectorstore to find most relevant chunks for key information
-                # More targeted queries with fewer results
                 relevant_chunks = []
                 queries = {
                     "title and authors": 1,
@@ -70,19 +72,14 @@ class PaperAgent:
                     "results and evaluation metrics": 1,
                     "data and preprocessing": 1
                 }
+                
                 for query, k in queries.items():
                     results = vectorstore.similarity_search(query, k=k)
-                    relevant_chunks.extend(results)
+                    relevant_chunks.extend([doc.page_content for doc in results])
                 
-                # Then analyze the content using both sequential and semantic chunks
-                # Convert to list of unique page contents to avoid duplicate Document objects
-                all_chunks = chunks + relevant_chunks
-                unique_chunks = []
-                seen_contents = set()
-                for chunk in all_chunks:
-                    if chunk.page_content not in seen_contents:
-                        seen_contents.add(chunk.page_content)
-                        unique_chunks.append(chunk)
+                # Combine and deduplicate chunks
+                all_chunks = text_chunks + relevant_chunks
+                unique_chunks = list(set(all_chunks))
                 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
                 

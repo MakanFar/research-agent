@@ -23,7 +23,11 @@ class PaperAnalyzer:
     
     def analyze(self, text_chunks):
         """Analyze paper content and extract structured information"""
-        combined_text = "\n".join([chunk.page_content for chunk in text_chunks])
+        # Handle both string and Document objects
+        combined_text = "\n".join([
+            chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
+            for chunk in text_chunks
+        ])
         
         analysis_prompt = f"""
         Analyze this academic paper excerpt and extract key information.
