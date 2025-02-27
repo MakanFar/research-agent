@@ -68,10 +68,12 @@ class PaperAgent:
                 
                 # Get information from specific sections
                 queries = {
-                    "title page header authors": 3,  # More chunks for metadata
-                    "methodology machine learning algorithm": 2,
-                    "results evaluation metrics": 2,
-                    "data preprocessing dataset": 2
+                    "title page header authors": 4,  # More chunks for metadata
+                    "abstract introduction": 3,  # Context and goals
+                    "methodology machine learning algorithm": 3,
+                    "results evaluation metrics": 3,
+                    "data preprocessing dataset": 3,
+                    "discussion conclusion": 3  # Important findings
                 }
                 
                 essential_sections = []
@@ -90,15 +92,22 @@ class PaperAgent:
                         seen_content.add(content)
                         all_chunks.append(content)
                 
-                # Prioritize first chunks which likely contain metadata
-                combined_text = " ".join(all_chunks)
-                if len(combined_text) > 1500:
-                    # Keep first chunk (likely metadata) and trim the rest
-                    first_chunk = all_chunks[0]
-                    remaining_text = " ".join(all_chunks[1:])[:1500 - len(first_chunk)]
-                    unique_chunks = [first_chunk + " " + remaining_text]
+                # Organize chunks by section priority
+                metadata_chunks = all_chunks[:4]  # First chunks likely contain metadata
+                content_chunks = all_chunks[4:]
+                
+                # Combine chunks with priority to metadata
+                combined_metadata = " ".join(metadata_chunks)
+                combined_content = " ".join(content_chunks)
+                
+                # Keep more content while respecting token limits
+                if len(combined_metadata) + len(combined_content) > 4000:
+                    # Keep all metadata and trim content
+                    remaining_length = 4000 - len(combined_metadata)
+                    trimmed_content = combined_content[:remaining_length]
+                    unique_chunks = [combined_metadata + " " + trimmed_content]
                 else:
-                    unique_chunks = [combined_text]
+                    unique_chunks = [combined_metadata + " " + combined_content]
                 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
                 
