@@ -12,7 +12,7 @@ class PaperAgent:
         self.api_key = api_key
         self.llm = ChatOpenAI(
             temperature=0,
-            model="gpt-3.5-turbo",
+            model="gpt-4-turbo",
             openai_api_key=api_key
         )
         self.pdf_processor = PDFProcessor(api_key)
