@@ -12,7 +12,7 @@ class PaperAgent:
         self.api_key = api_key
         self.llm = ChatOpenAI(
             temperature=0,
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             openai_api_key=api_key
         )
         self.pdf_processor = PDFProcessor(api_key)
@@ -53,8 +53,13 @@ class PaperAgent:
     
     def analyze_papers(self, paper_paths):
         """Analyze multiple papers and return structured summaries"""
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+
+        thread_local = threading.local()
         results = []
-        for path in paper_paths:
+
+        def analyze_single_paper(path):
             try:
                 # First process the PDF and get chunks with embeddings
                 processed_data = self.pdf_processor.process(path)
@@ -64,18 +69,14 @@ class PaperAgent:
                 # Extract text content from initial chunks
                 text_chunks = [chunk.page_content for chunk in chunks]
                 
-                # Use vectorstore to find most relevant chunks for key information
+                # Use vectorstore to find most relevant chunks more efficiently
                 relevant_chunks = []
-                queries = {
-                    "title and authors": 1,
-                    "methodology and algorithms": 1,
-                    "results and evaluation metrics": 1,
-                    "data and preprocessing": 1
-                }
-                
-                for query, k in queries.items():
-                    results = vectorstore.similarity_search(query, k=k)
-                    relevant_chunks.extend([doc.page_content for doc in results])
+                # Single combined query to reduce API calls
+                results = vectorstore.similarity_search(
+                    "title authors methodology results data preprocessing evaluation", 
+                    k=4
+                )
+                relevant_chunks.extend([doc.page_content for doc in results])
                 
                 # Combine and deduplicate chunks
                 all_chunks = text_chunks + relevant_chunks
@@ -109,4 +110,17 @@ class PaperAgent:
                     "error": str(e),
                     "file": path
                 })
+        def process_paper(path):
+            try:
+                return analyze_single_paper(path)
+            except Exception as e:
+                return {
+                    "error": str(e),
+                    "file": path
+                }
+
+        # Process papers in parallel
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            results = list(executor.map(process_paper, paper_paths))
+
         return results

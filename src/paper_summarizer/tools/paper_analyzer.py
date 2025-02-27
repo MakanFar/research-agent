@@ -30,13 +30,13 @@ class PaperAnalyzer:
         ])
         
         analysis_prompt = f"""
-        Analyze this academic paper excerpt and extract key information.
-        Focus on the most important details and be concise.
-        Return a JSON object with these fields (use 'unknown' if information is not found):
+        Extract key information from this paper excerpt.
+        Be concise and focus on factual information only.
+        Format: Return a JSON object with exactly these fields (use 'unknown' if not found):
         {json.dumps(self.schema, indent=2)}
 
-        Paper excerpt:
-        {combined_text[:8000]}  # Limit text length
+        Text:
+        {combined_text[:4000]}
         """
         
         try:
