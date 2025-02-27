@@ -1,5 +1,6 @@
 import yaml
 import os
+import json
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress
@@ -40,8 +41,8 @@ class CLI:
                     paper_paths.append(os.path.join(root, file))
         return paper_paths
     
-    def display_results(self, results):
-        """Display results in a rich table"""
+    def display_results(self, results, output_dir):
+        """Display results in a rich table and save to file"""
         table = Table(title="Paper Summaries", show_lines=True)
         
         # Add columns for key information
@@ -77,7 +78,24 @@ class CLI:
                 str(result.get('evaluation_metrics', 'N/A'))[:100]
             )
         
+        # Display table in console
         self.console.print(table)
+        
+        # Save results to JSON file
+        output_file = os.path.join(output_dir, "paper_summaries.json")
+        with open(output_file, 'w') as f:
+            json.dump(results, f, indent=2)
+        
+        # Save table to HTML file
+        from rich.html import HTML
+        output_html = os.path.join(output_dir, "paper_summaries.html")
+        html_content = self.console.export_html(table)
+        with open(output_html, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+            
+        self.console.print(f"\n[green]Results saved to:")
+        self.console.print(f"- JSON: {output_file}")
+        self.console.print(f"- HTML: {output_html}")
     
     def run(self, config_path="config.yaml"):
         """Main CLI execution"""
@@ -101,8 +119,11 @@ class CLI:
                 results = agent.analyze_papers(paper_paths)
                 progress.update(task, advance=1)
             
-            # Display results
-            self.display_results(results)
+            # Create output directory if it doesn't exist
+            os.makedirs(config['output_directory'], exist_ok=True)
+            
+            # Display and save results
+            self.display_results(results, config['output_directory'])
             
         except Exception as e:
             self.console.print(f"[red]Error: {str(e)}")
