@@ -11,8 +11,25 @@ class CLI:
         
     def load_config(self, config_path="config.yaml"):
         """Load configuration from YAML file"""
-        with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
+        try:
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                
+            required_keys = ['openai_api_key', 'papers_directory', 'output_directory']
+            missing_keys = [key for key in required_keys if key not in config]
+            
+            if missing_keys:
+                raise ValueError(f"Missing required configuration keys: {', '.join(missing_keys)}")
+                
+            if not os.path.exists(config['papers_directory']):
+                raise ValueError(f"Papers directory not found: {config['papers_directory']}")
+                
+            return config
+            
+        except FileNotFoundError:
+            raise Exception(f"Configuration file not found: {config_path}")
+        except yaml.YAMLError as e:
+            raise Exception(f"Error parsing configuration file: {str(e)}")
     
     def get_paper_paths(self, directory):
         """Get all PDF files from directory"""
