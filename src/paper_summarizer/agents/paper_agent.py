@@ -71,10 +71,10 @@ class PaperAgent:
                 
                 # Use vectorstore to find most relevant chunks more efficiently
                 relevant_chunks = []
-                # Single combined query to reduce API calls
+                # More focused query with fewer results
                 results = vectorstore.similarity_search(
-                    "title authors methodology results data preprocessing evaluation", 
-                    k=4
+                    "title authors abstract conclusion", 
+                    k=2
                 )
                 relevant_chunks.extend([doc.page_content for doc in results])
                 

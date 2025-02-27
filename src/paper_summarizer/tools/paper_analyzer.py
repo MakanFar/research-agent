@@ -31,12 +31,12 @@ class PaperAnalyzer:
         
         analysis_prompt = f"""
         Extract key information from this paper excerpt.
-        Be concise and focus on factual information only.
-        Format: Return a JSON object with exactly these fields (use 'unknown' if not found):
+        Be very concise. Return 'unknown' if information is not clearly stated.
+        Format: JSON object with these fields:
         {json.dumps(self.schema, indent=2)}
 
         Text:
-        {combined_text[:4000]}
+        {combined_text[:2000]}
         """
         
         try:
