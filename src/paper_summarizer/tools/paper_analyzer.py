@@ -23,6 +23,19 @@ class PaperAnalyzer:
     
     def analyze(self, text_chunks):
         """Analyze paper content and extract structured information"""
-        # This would use the LLM to extract information according to the schema
-        # For now returning a placeholder structure
-        return {key: None for key in self.schema.keys()}
+        combined_text = "\n".join([chunk.page_content for chunk in text_chunks])
+        
+        analysis_prompt = f"""
+        Analyze the following academic paper text and extract the requested information.
+        Return the information in a JSON format matching exactly these fields:
+        {json.dumps(self.schema, indent=2)}
+        
+        Paper text:
+        {combined_text}
+        """
+        
+        try:
+            # The LLM call will be handled by the agent, we just prepare the text
+            return analysis_prompt
+        except Exception as e:
+            raise Exception(f"Error analyzing paper content: {str(e)}")

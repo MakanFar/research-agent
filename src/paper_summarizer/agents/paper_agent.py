@@ -53,10 +53,36 @@ class PaperAgent:
         results = []
         for path in paper_paths:
             try:
+                # First process the PDF
+                chunks = self.pdf_processor.process(path)
+                
+                # Then analyze the content
+                analysis = self.paper_analyzer.analyze(chunks)
+                
+                # Use the agent to extract structured information
                 result = self.agent_executor.invoke({
-                    "input": f"Analyze the paper at {path} and extract key information"
+                    "input": f"""
+                    Based on the following paper analysis, extract the requested information in JSON format:
+                    {analysis}
+                    """
                 })
-                results.append(result)
+                
+                # Extract the actual result from the agent's output
+                if isinstance(result, dict) and 'output' in result:
+                    try:
+                        # Try to parse JSON from the output
+                        parsed_result = json.loads(result['output'])
+                        results.append(parsed_result)
+                    except json.JSONDecodeError:
+                        # If not valid JSON, use the raw output
+                        results.append(result['output'])
+                else:
+                    results.append(result)
+                    
             except Exception as e:
                 print(f"Error processing {path}: {str(e)}")
+                results.append({
+                    "error": str(e),
+                    "file": path
+                })
         return results

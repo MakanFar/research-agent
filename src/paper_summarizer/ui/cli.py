@@ -25,23 +25,39 @@ class CLI:
     
     def display_results(self, results):
         """Display results in a rich table"""
-        table = Table(title="Paper Summaries")
+        table = Table(title="Paper Summaries", show_lines=True)
         
-        # Add columns
-        table.add_column("Title", style="cyan")
-        table.add_column("First Author", style="green")
-        table.add_column("Journal", style="yellow")
-        table.add_column("AI Goal", style="magenta")
-        table.add_column("ML Algorithm", style="blue")
+        # Add columns for key information
+        columns = [
+            ("Title", "cyan"),
+            ("First Author", "green"),
+            ("Journal", "yellow"),
+            ("Publication Date", "blue"),
+            ("AI Goal", "magenta"),
+            ("ML Algorithm", "blue"),
+            ("Data Type", "yellow"),
+            ("Evaluation Metrics", "green")
+        ]
+        
+        for col_name, style in columns:
+            table.add_column(col_name, style=style, overflow="fold")
         
         # Add rows
         for result in results:
+            if isinstance(result, dict) and 'error' in result:
+                # Handle error cases
+                self.console.print(f"[red]Error processing {result['file']}: {result['error']}")
+                continue
+                
             table.add_row(
-                result.get('title', 'N/A'),
-                result.get('first_author', 'N/A'),
-                result.get('journal', 'N/A'),
-                result.get('ai_goal', 'N/A'),
-                result.get('ml_algorithm', 'N/A')
+                str(result.get('title', 'N/A'))[:100],
+                str(result.get('first_author', 'N/A'))[:50],
+                str(result.get('journal', 'N/A'))[:50],
+                str(result.get('publication_date', 'N/A')),
+                str(result.get('ai_goal', 'N/A'))[:100],
+                str(result.get('ml_algorithm', 'N/A'))[:50],
+                str(result.get('data_type', 'N/A'))[:50],
+                str(result.get('evaluation_metrics', 'N/A'))[:100]
             )
         
         self.console.print(table)
