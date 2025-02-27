@@ -66,16 +66,39 @@ class PaperAgent:
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
                 
-                # Get only the most essential information
-                essential_sections = vectorstore.similarity_search(
-                    "title abstract introduction conclusion", 
-                    k=2
-                )
+                # Get information from specific sections
+                queries = {
+                    "title page header authors": 3,  # More chunks for metadata
+                    "methodology machine learning algorithm": 2,
+                    "results evaluation metrics": 2,
+                    "data preprocessing dataset": 2
+                }
                 
-                # Extract and limit content
-                all_chunks = [doc.page_content for doc in essential_sections]
+                essential_sections = []
+                for query, k in queries.items():
+                    results = vectorstore.similarity_search(query, k=k)
+                    essential_sections.extend(results)
+                
+                # Process chunks more intelligently
+                all_chunks = []
+                seen_content = set()
+                
+                for doc in essential_sections:
+                    content = doc.page_content.strip()
+                    # Only add non-empty, unique content
+                    if content and content not in seen_content:
+                        seen_content.add(content)
+                        all_chunks.append(content)
+                
+                # Prioritize first chunks which likely contain metadata
                 combined_text = " ".join(all_chunks)
-                unique_chunks = [combined_text[:1500]]  # Strict limit on text length
+                if len(combined_text) > 1500:
+                    # Keep first chunk (likely metadata) and trim the rest
+                    first_chunk = all_chunks[0]
+                    remaining_text = " ".join(all_chunks[1:])[:1500 - len(first_chunk)]
+                    unique_chunks = [first_chunk + " " + remaining_text]
+                else:
+                    unique_chunks = [combined_text]
                 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
                 

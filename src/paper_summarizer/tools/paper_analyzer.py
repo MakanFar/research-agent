@@ -33,13 +33,25 @@ class PaperAnalyzer:
         simple_schema = {k: v["description"] for k, v in self.schema.items()}
         
         analysis_prompt = f"""
-        Extract only the key information from this paper excerpt.
-        Be extremely concise. Use 'unknown' for missing info.
-        Return valid JSON only, with these fields:
+        You are a research paper analyzer. Extract specific information from this paper excerpt.
+        Focus on finding factual information only. Do not make assumptions.
+        If information is not explicitly stated, use "unknown".
+        If a boolean field is unclear, default to false.
+
+        Required format: Return a JSON object with these exact fields:
         {json.dumps(simple_schema)}
 
-        Text:
+        Guidelines:
+        - For authors: Look for the first author in the title page or header
+        - For dates: Check the publication or submission date
+        - For journal: Look for journal name in header or footer
+        - For ML/AI fields: Focus on methodology and results sections
+        - For boolean fields: Only mark true if explicitly stated
+
+        Paper excerpt:
         {combined_text[:800]}
+
+        Return ONLY the JSON object, no other text.
         """
         
         try:
