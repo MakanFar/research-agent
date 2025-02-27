@@ -62,9 +62,16 @@ class PaperAgent:
                 vectorstore = processed_data['vectorstore']
                 
                 # Use vectorstore to find most relevant chunks for key information
+                # More targeted queries with fewer results
                 relevant_chunks = []
-                for query in ["methodology", "results", "introduction", "conclusion"]:
-                    results = vectorstore.similarity_search(query, k=2)
+                queries = {
+                    "title and authors": 1,
+                    "methodology and algorithms": 1,
+                    "results and evaluation metrics": 1,
+                    "data and preprocessing": 1
+                }
+                for query, k in queries.items():
+                    results = vectorstore.similarity_search(query, k=k)
                     relevant_chunks.extend(results)
                 
                 # Then analyze the content using both sequential and semantic chunks

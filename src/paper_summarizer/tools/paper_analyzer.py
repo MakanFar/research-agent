@@ -26,12 +26,13 @@ class PaperAnalyzer:
         combined_text = "\n".join([chunk.page_content for chunk in text_chunks])
         
         analysis_prompt = f"""
-        Analyze the following academic paper text and extract the requested information.
-        Return the information in a JSON format matching exactly these fields:
+        Analyze this academic paper excerpt and extract key information.
+        Focus on the most important details and be concise.
+        Return a JSON object with these fields (use 'unknown' if information is not found):
         {json.dumps(self.schema, indent=2)}
-        
-        Paper text:
-        {combined_text}
+
+        Paper excerpt:
+        {combined_text[:8000]}  # Limit text length
         """
         
         try:
