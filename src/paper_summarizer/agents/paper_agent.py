@@ -45,7 +45,8 @@ class PaperAgent:
     def _create_prompt(self):
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert at analyzing academic papers. Extract key information accurately."),
-            ("user", "{input}")
+            ("user", "{input}"),
+            ("user", "{agent_scratchpad}")
         ])
         return prompt
     
