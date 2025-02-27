@@ -49,7 +49,7 @@ class PaperAnalyzer:
         - For boolean fields: Only mark true if explicitly stated
 
         Paper excerpt:
-        {combined_text[:2500]}
+        {combined_text[:4000]}
 
         Return ONLY the JSON object, no other text.
         """
