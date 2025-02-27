@@ -33,13 +33,13 @@ class PaperAnalyzer:
         simple_schema = {k: v["description"] for k, v in self.schema.items()}
         
         analysis_prompt = f"""
-        Extract key information from this paper excerpt.
-        Be extremely concise. Use 'unknown' if not found.
-        Return JSON with these fields:
+        Extract only the key information from this paper excerpt.
+        Be extremely concise. Use 'unknown' for missing info.
+        Return valid JSON only, with these fields:
         {json.dumps(simple_schema)}
 
         Text:
-        {combined_text[:1500]}
+        {combined_text[:800]}
         """
         
         try:

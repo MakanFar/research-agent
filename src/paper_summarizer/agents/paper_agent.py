@@ -66,25 +66,16 @@ class PaperAgent:
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
                 
-                # Only use the most relevant chunks from specific sections
-                queries = {
-                    "title abstract": 1,
-                    "methods": 1,
-                    "results conclusion": 1
-                }
+                # Get only the most essential information
+                essential_sections = vectorstore.similarity_search(
+                    "title abstract introduction conclusion", 
+                    k=2
+                )
                 
-                all_chunks = []
-                for query, k in queries.items():
-                    results = vectorstore.similarity_search(query, k=k)
-                    all_chunks.extend([doc.page_content for doc in results])
-                
-                # Keep only unique chunks
-                unique_chunks = list(set(all_chunks))
-                
-                # Limit total text length
-                combined_text = " ".join(unique_chunks)
-                if len(combined_text) > 3000:
-                    unique_chunks = [combined_text[:3000]]
+                # Extract and limit content
+                all_chunks = [doc.page_content for doc in essential_sections]
+                combined_text = " ".join(all_chunks)
+                unique_chunks = [combined_text[:1500]]  # Strict limit on text length
                 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
                 

@@ -7,9 +7,9 @@ class PDFProcessor:
     def __init__(self, api_key):
         self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=250,
-            chunk_overlap=25,
-            separators=["\n\n", "\n", ".", " ", ""]
+            chunk_size=150,
+            chunk_overlap=20,
+            separators=["\n\n", "\n", ".", "!", "?", ";", " ", ""]
         )
     
     def process(self, file_path):
