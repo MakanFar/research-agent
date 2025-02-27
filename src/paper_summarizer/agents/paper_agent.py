@@ -68,12 +68,13 @@ class PaperAgent:
                 
                 # Get information from specific sections
                 queries = {
-                    "title page header authors": 4,  # More chunks for metadata
-                    "abstract introduction": 3,  # Context and goals
-                    "methodology machine learning algorithm": 3,
-                    "results evaluation metrics": 3,
-                    "data preprocessing dataset": 3,
-                    "discussion conclusion": 3  # Important findings
+                    "title abstract authors affiliations": 5,  # Increased metadata chunks
+                    "introduction background objective": 4,  # More context
+                    "methods methodology algorithm model": 5,  # More technical details
+                    "data dataset preprocessing cleaning": 4,  # Data handling
+                    "results performance metrics evaluation": 4,  # Outcomes
+                    "discussion findings implications": 3,  # Interpretations
+                    "conclusion future work": 3  # Final remarks
                 }
                 
                 essential_sections = []
@@ -92,22 +93,35 @@ class PaperAgent:
                         seen_content.add(content)
                         all_chunks.append(content)
                 
-                # Organize chunks by section priority
-                metadata_chunks = all_chunks[:4]  # First chunks likely contain metadata
-                content_chunks = all_chunks[4:]
+                # Organize chunks by section importance
+                metadata_chunks = all_chunks[:5]  # Increased metadata chunks
+                method_chunks = all_chunks[5:10]  # Methodology section
+                results_chunks = all_chunks[10:15]  # Results section
+                other_chunks = all_chunks[15:]  # Other content
                 
-                # Combine chunks with priority to metadata
-                combined_metadata = " ".join(metadata_chunks)
-                combined_content = " ".join(content_chunks)
+                # Combine chunks strategically
+                sections = {
+                    "metadata": " ".join(metadata_chunks),
+                    "methods": " ".join(method_chunks),
+                    "results": " ".join(results_chunks),
+                    "other": " ".join(other_chunks)
+                }
                 
-                # Keep more content while respecting token limits
-                if len(combined_metadata) + len(combined_content) > 4000:
-                    # Keep all metadata and trim content
-                    remaining_length = 4000 - len(combined_metadata)
-                    trimmed_content = combined_content[:remaining_length]
-                    unique_chunks = [combined_metadata + " " + trimmed_content]
-                else:
-                    unique_chunks = [combined_metadata + " " + combined_content]
+                # Prioritize content while respecting token limits
+                total_length = 4000
+                section_limits = {
+                    "metadata": 1000,
+                    "methods": 1500,
+                    "results": 1000,
+                    "other": 500
+                }
+                
+                final_content = []
+                for section, content in sections.items():
+                    limit = section_limits[section]
+                    final_content.append(content[:limit])
+                
+                unique_chunks = [" ".join(final_content)]
                 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
                 

@@ -33,25 +33,47 @@ class PaperAnalyzer:
         simple_schema = {k: v["description"] for k, v in self.schema.items()}
         
         analysis_prompt = f"""
-        You are a research paper analyzer. Extract specific information from this paper excerpt.
-        Focus on finding factual information only. Do not make assumptions.
-        If information is not explicitly stated, use "unknown".
-        If a boolean field is unclear, default to false.
+        You are an expert research paper analyzer specializing in AI/ML papers. Extract specific information from this paper excerpt.
+        Be thorough and precise in your analysis. Search for both explicit and implicit information.
 
         Required format: Return a JSON object with these exact fields:
         {json.dumps(simple_schema)}
 
-        Guidelines:
-        - For authors: Look for the first author in the title page or header
-        - For dates: Check the publication or submission date
-        - For journal: Look for journal name in header or footer
-        - For ML/AI fields: Focus on methodology and results sections
-        - For boolean fields: Only mark true if explicitly stated
+        Detailed Guidelines:
+        1. Paper Metadata:
+           - First author: Look in title, header, author list (take first listed)
+           - Publication date: Check header, footer, submission/acceptance dates
+           - Journal: Search header, footer, citation info
+           - Title: Extract complete paper title
+        
+        2. Data & Methodology:
+           - External data: Mark true if mentions external datasets, databases, or public data
+           - Small dataset techniques: Look for data augmentation, transfer learning, etc.
+           - Data heterogeneity: Note any mentions of data variety or handling different data types
+           - Preprocessing: List all data cleaning, normalization, or preparation steps
+        
+        3. ML/AI Specifics:
+           - ML algorithm: Include all mentioned models (CNN, RNN, etc.)
+           - Data type: Specify exact data types (images, text, sensor data, etc.)
+           - AI goal: Describe the specific medical/clinical objective
+           - Evaluation metrics: List all metrics (accuracy, precision, F1, etc.)
+        
+        4. Implementation:
+           - Black box status: Mark true if model interpretability is not discussed
+           - Clinical implementation: Mark true if mentions real-world deployment
+        
+        5. Species/Medical:
+           - Species/breed: Note any specific animal types mentioned
+           - Clinical relevance: Note any practical medical applications
+
+        If information is truly not found after thorough search, use "unknown".
+        For boolean fields, default to false only if confidently not mentioned.
 
         Paper excerpt:
         {combined_text[:4000]}
 
-        Return ONLY the JSON object, no other text.
+        Return ONLY a valid JSON object, no additional text.
+        Ensure all field names exactly match the schema.
         """
         
         try:
