@@ -100,20 +100,26 @@ class PaperAgent:
                 if isinstance(result, dict) and 'output' in result:
                     try:
                         # Try to parse JSON from the output
-                        parsed_result = json.loads(result['output'])
-                        results.append(parsed_result)
+                        # Remove any leading/trailing text around the JSON
+                        output_text = result['output']
+                        start_idx = output_text.find('{')
+                        end_idx = output_text.rfind('}') + 1
+                        if start_idx != -1 and end_idx != -1:
+                            json_str = output_text[start_idx:end_idx]
+                            parsed_result = json.loads(json_str)
+                            return parsed_result
+                        else:
+                            return {"error": "No JSON found in output", "file": path}
                     except json.JSONDecodeError:
-                        # If not valid JSON, use the raw output
-                        results.append(result['output'])
+                        return {"error": "Invalid JSON in output", "file": path}
                 else:
-                    results.append(result)
+                    return {"error": "Unexpected output format", "file": path}
                     
             except Exception as e:
-                print(f"Error processing {path}: {str(e)}")
-                results.append({
+                return {
                     "error": str(e),
                     "file": path
-                })
+                }
         def process_paper(path):
             try:
                 return analyze_single_paper(path)
