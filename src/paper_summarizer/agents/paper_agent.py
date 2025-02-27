@@ -68,7 +68,16 @@ class PaperAgent:
                     relevant_chunks.extend(results)
                 
                 # Then analyze the content using both sequential and semantic chunks
-                analysis = self.paper_analyzer.analyze(list(set(chunks + relevant_chunks)))
+                # Convert to list of unique page contents to avoid duplicate Document objects
+                all_chunks = chunks + relevant_chunks
+                unique_chunks = []
+                seen_contents = set()
+                for chunk in all_chunks:
+                    if chunk.page_content not in seen_contents:
+                        seen_contents.add(chunk.page_content)
+                        unique_chunks.append(chunk)
+                
+                analysis = self.paper_analyzer.analyze(unique_chunks)
                 
                 # Use the agent to extract structured information
                 result = self.agent_executor.invoke({
