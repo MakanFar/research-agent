@@ -10,7 +10,8 @@ setup(
         "openai",
         "rich",
         "pyyaml",
-        "pypdf"
+        "pypdf",
+        "faiss-cpu"
     ],
     entry_points={
         "console_scripts": [

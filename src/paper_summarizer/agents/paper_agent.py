@@ -9,12 +9,13 @@ from ..tools.paper_analyzer import PaperAnalyzer
 
 class PaperAgent:
     def __init__(self, api_key):
+        self.api_key = api_key
         self.llm = ChatOpenAI(
             temperature=0,
             model="gpt-4",
             openai_api_key=api_key
         )
-        self.pdf_processor = PDFProcessor()
+        self.pdf_processor = PDFProcessor(api_key)
         self.paper_analyzer = PaperAnalyzer()
         
         self.tools = [
@@ -55,11 +56,19 @@ class PaperAgent:
         results = []
         for path in paper_paths:
             try:
-                # First process the PDF
-                chunks = self.pdf_processor.process(path)
+                # First process the PDF and get chunks with embeddings
+                processed_data = self.pdf_processor.process(path)
+                chunks = processed_data['chunks']
+                vectorstore = processed_data['vectorstore']
                 
-                # Then analyze the content
-                analysis = self.paper_analyzer.analyze(chunks)
+                # Use vectorstore to find most relevant chunks for key information
+                relevant_chunks = []
+                for query in ["methodology", "results", "introduction", "conclusion"]:
+                    results = vectorstore.similarity_search(query, k=2)
+                    relevant_chunks.extend(results)
+                
+                # Then analyze the content using both sequential and semantic chunks
+                analysis = self.paper_analyzer.analyze(list(set(chunks + relevant_chunks)))
                 
                 # Use the agent to extract structured information
                 result = self.agent_executor.invoke({
