@@ -29,14 +29,17 @@ class PaperAnalyzer:
             for chunk in text_chunks
         ])
         
+        # Create a simplified schema for the prompt
+        simple_schema = {k: v["description"] for k, v in self.schema.items()}
+        
         analysis_prompt = f"""
         Extract key information from this paper excerpt.
-        Be very concise. Return 'unknown' if information is not clearly stated.
-        Format: JSON object with these fields:
-        {json.dumps(self.schema, indent=2)}
+        Be extremely concise. Use 'unknown' if not found.
+        Return JSON with these fields:
+        {json.dumps(simple_schema)}
 
         Text:
-        {combined_text[:2000]}
+        {combined_text[:1500]}
         """
         
         try:

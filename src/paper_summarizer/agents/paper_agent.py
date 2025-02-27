@@ -66,21 +66,25 @@ class PaperAgent:
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
                 
-                # Extract text content from initial chunks
-                text_chunks = [chunk.page_content for chunk in chunks]
+                # Only use the most relevant chunks from specific sections
+                queries = {
+                    "title abstract": 1,
+                    "methods": 1,
+                    "results conclusion": 1
+                }
                 
-                # Use vectorstore to find most relevant chunks more efficiently
-                relevant_chunks = []
-                # More focused query with fewer results
-                results = vectorstore.similarity_search(
-                    "title authors abstract conclusion", 
-                    k=2
-                )
-                relevant_chunks.extend([doc.page_content for doc in results])
+                all_chunks = []
+                for query, k in queries.items():
+                    results = vectorstore.similarity_search(query, k=k)
+                    all_chunks.extend([doc.page_content for doc in results])
                 
-                # Combine and deduplicate chunks
-                all_chunks = text_chunks + relevant_chunks
+                # Keep only unique chunks
                 unique_chunks = list(set(all_chunks))
+                
+                # Limit total text length
+                combined_text = " ".join(unique_chunks)
+                if len(combined_text) > 3000:
+                    unique_chunks = [combined_text[:3000]]
                 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
                 
