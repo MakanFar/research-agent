@@ -6,7 +6,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.tools import Tool
 from ..tools.pdf_processor import PDFProcessor
 from ..tools.paper_analyzer import PaperAnalyzer
-
+import re
 class PaperAgent:
     def __init__(self, api_key):
         self.api_key = api_key
@@ -51,6 +51,7 @@ class PaperAgent:
         ])
         return prompt
     
+ 
     def analyze_papers(self, paper_paths):
         """Analyze multiple papers and return structured summaries"""
         from concurrent.futures import ThreadPoolExecutor
@@ -65,7 +66,7 @@ class PaperAgent:
                 processed_data = self.pdf_processor.process(path)
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
-                
+                text_chunks = [chunk.page_content for chunk in chunks]
                 # Get information from specific sections
                 queries = {
                     "title abstract authors affiliations": 5,  # Increased metadata chunks
@@ -77,53 +78,20 @@ class PaperAgent:
                     "conclusion future work": 3  # Final remarks
                 }
                 
-                essential_sections = []
+                relevant_chunks = []
                 for query, k in queries.items():
                     results = vectorstore.similarity_search(query, k=k)
-                    essential_sections.extend(results)
+                    relevant_chunks.extend([doc.page_content for doc in results])
                 
-                # Process chunks more intelligently
-                all_chunks = []
-                seen_content = set()
-                
-                for doc in essential_sections:
-                    content = doc.page_content.strip()
-                    # Only add non-empty, unique content
-                    if content and content not in seen_content:
-                        seen_content.add(content)
-                        all_chunks.append(content)
-                
-                # Organize chunks by section importance
-                metadata_chunks = all_chunks[:5]  # Increased metadata chunks
-                method_chunks = all_chunks[5:10]  # Methodology section
-                results_chunks = all_chunks[10:15]  # Results section
-                other_chunks = all_chunks[15:]  # Other content
-                
-                # Combine chunks strategically
-                sections = {
-                    "metadata": " ".join(metadata_chunks),
-                    "methods": " ".join(method_chunks),
-                    "results": " ".join(results_chunks),
-                    "other": " ".join(other_chunks)
-                }
-                
-                # Prioritize content while respecting token limits
-                total_length = 4000
-                section_limits = {
-                    "metadata": 1000,
-                    "methods": 1500,
-                    "results": 1000,
-                    "other": 500
-                }
-                
-                final_content = []
-                for section, content in sections.items():
-                    limit = section_limits[section]
-                    final_content.append(content[:limit])
-                
-                unique_chunks = [" ".join(final_content)]
-                
+                # Combine and deduplicate chunks
+                all_chunks = text_chunks + relevant_chunks
+                unique_chunks = list(set(all_chunks))
+
+                with open("test.txt", "w", encoding="utf-8") as file:
+                    for chunk in unique_chunks:
+                        file.write(chunk + "\n\n")
                 analysis = self.paper_analyzer.analyze(unique_chunks)
+                
                 
                 # Use the agent to extract structured information
                 result = self.agent_executor.invoke({

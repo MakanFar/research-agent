@@ -49,12 +49,12 @@ class PaperAnalyzer:
         2. Data & Methodology:
            - External data: Mark true if mentions external datasets, databases, or public data
            - Small dataset techniques: Look for data augmentation, transfer learning, etc.
-           - Data heterogeneity: Note any mentions of data variety or handling different data types
+           - Data heterogeneity: Note any mentions of data variety, using different datasets or handling different data types
            - Preprocessing: List all data cleaning, normalization, or preparation steps
         
         3. ML/AI Specifics:
-           - ML algorithm: Include all mentioned models (CNN, RNN, etc.)
-           - Data type: Specify exact data types (images, text, sensor data, etc.)
+           - ML algorithm: Include final models used  (CNN, RNN, etc.)
+           - Data type: Specify data types used for training the model (images, text, clinical data, etc.)
            - AI goal: Describe the specific medical/clinical objective
            - Evaluation metrics: List all metrics (accuracy, precision, F1, etc.)
         
@@ -63,8 +63,7 @@ class PaperAnalyzer:
            - Clinical implementation: Mark true if mentions real-world deployment
         
         5. Species/Medical:
-           - Species/breed: Note any specific animal types mentioned
-           - Clinical relevance: Note any practical medical applications
+           - Species/breed: Note animal types mentioned for the study
 
         If information is truly not found after thorough search, use "unknown".
         For boolean fields, default to false only if confidently not mentioned.
@@ -75,6 +74,7 @@ class PaperAnalyzer:
         Return ONLY a valid JSON object, no additional text.
         Ensure all field names exactly match the schema.
         """
+        
         
         try:
             # The LLM call will be handled by the agent, we just prepare the text
