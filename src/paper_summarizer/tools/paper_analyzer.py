@@ -89,6 +89,9 @@ class PaperAnalyzer:
         # Create a simplified schema for the prompt
         simple_schema = {k: v["description"] for k, v in self.schema.items()}
         
+        # Combine processed chunks into a single text
+        combined_text = "\n".join(processed_chunks)
+        
         analysis_prompt = f"""
         You are an expert research paper analyzer specializing in AI/ML papers. Extract specific information from this paper excerpt.
         Be thorough and precise in your analysis. Search for both explicit and implicit information.
