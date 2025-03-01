@@ -21,70 +21,13 @@ class PaperAnalyzer:
             "clinical_implementation": {"type": "boolean", "description": "Whether the model has been implemented clinically or commercially"}
         }
     
-    def _map_chunk(self, chunk):
-        """Analyze a single chunk of text"""
-        # Handle both string and Document objects
-        text = chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
-        
-        map_prompt = f"""
-        Analyze this section of a research paper and extract key information.
-        Focus on finding specific details that match these categories:
-        
-        1. Paper metadata (authors, dates, journal)
-        2. Data handling (external data, preprocessing)
-        3. ML/AI details (algorithms, metrics)
-        4. Implementation details
-        5. Species/medical information
-        
-        Text section:
-        {text}
-        
-        Return ONLY a valid JSON object with any found information, no additional text.
-        Only include fields where you found relevant information.
-        """
-        
-        return map_prompt
-
-    def _reduce_results(self, mapped_results):
-        """Combine and reconcile multiple analysis results"""
-        reduce_prompt = f"""
-        Combine these separate paper analysis results into a single coherent summary.
-        Resolve any conflicts by choosing the most specific or detailed information.
-        
-        Analysis sections:
-        {json.dumps(mapped_results, indent=2)}
-        
-        Required format: Return a JSON object with these exact fields:
-        {json.dumps(self.schema, indent=2)}
-        
-        Guidelines:
-        1. Merge all found metadata, keeping most complete information
-        2. Combine all preprocessing steps and techniques
-        3. List all evaluation metrics found
-        4. Use most detailed algorithm descriptions
-        5. Set boolean fields true if any section indicates true
-        
-        Return ONLY a valid JSON object, no additional text.
-        """
-        
-        return reduce_prompt
-
     def analyze(self, text_chunks):
-        """Analyze paper content using map-reduce approach"""
-        # Map phase - analyze each chunk separately
-        mapped_results = []
-        chunk_size = 2000  # Process 2000 characters at a time
-        
-        # Split very large chunks if needed
-        processed_chunks = []
-        for chunk in text_chunks:
-            text = chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
-            if len(text) > chunk_size:
-                # Split into smaller chunks, trying to break at sentences
-                parts = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
-                processed_chunks.extend(parts)
-            else:
-                processed_chunks.append(text)
+        """Analyze paper content and extract structured information"""
+        # Handle both string and Document objects
+        combined_text = "\n".join([
+            chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
+            for chunk in text_chunks
+        ])
         
         # Create a simplified schema for the prompt
         simple_schema = {k: v["description"] for k, v in self.schema.items()}

@@ -43,14 +43,6 @@ class PaperAgent:
             verbose=True
         )
     
-    def _extract_json(self, text):
-        """Extract JSON string from text output"""
-        start_idx = text.find('{')
-        end_idx = text.rfind('}') + 1
-        if start_idx != -1 and end_idx != -1:
-            return text[start_idx:end_idx]
-        return None
-
     def _create_prompt(self):
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert at analyzing academic papers. Extract key information accurately."),
@@ -70,48 +62,35 @@ class PaperAgent:
 
         def analyze_single_paper(path):
             try:
-                # Process the PDF and get chunks with embeddings
+                # First process the PDF and get chunks with embeddings
                 processed_data = self.pdf_processor.process(path)
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
-                
-                # Define important section queries
+                text_chunks = [chunk.page_content for chunk in chunks]
+                # Get information from specific sections
                 queries = {
-                    "title abstract authors affiliations": 5,
-                    "introduction background objective": 4,
-                    "methods methodology algorithm model": 5,
-                    "data dataset preprocessing cleaning": 4,
-                    "results performance metrics evaluation": 4,
-                    "discussion findings implications": 3,
-                    "conclusion future work": 3
+                    "title abstract authors affiliations": 5,  # Increased metadata chunks
+                    "introduction background objective": 4,  # More context
+                    "methods methodology algorithm model": 5,  # More technical details
+                    "data dataset preprocessing cleaning": 4,  # Data handling
+                    "results performance metrics evaluation": 4,  # Outcomes
+                    "discussion findings implications": 3,  # Interpretations
+                    "conclusion future work": 3  # Final remarks
                 }
                 
-                # Get relevant chunks for each section
-                section_chunks = []
+                relevant_chunks = []
                 for query, k in queries.items():
                     results = vectorstore.similarity_search(query, k=k)
-                    section_chunks.extend(results)
+                    relevant_chunks.extend([doc.page_content for doc in results])
                 
-                # Map phase - analyze each section
-                mapped_results = []
-                for chunk in section_chunks:
-                    map_prompt = self.paper_analyzer._map_chunk(chunk)
-                    map_result = self.agent_executor.invoke({
-                        "input": map_prompt
-                    })
-                    if isinstance(map_result, dict) and 'output' in map_result:
-                        try:
-                            json_str = self._extract_json(map_result['output'])
-                            if json_str:
-                                mapped_results.append(json.loads(json_str))
-                        except json.JSONDecodeError:
-                            continue
-                
-                # Reduce phase - combine results
-                reduce_prompt = self.paper_analyzer._reduce_results(mapped_results)
-                analysis = self.agent_executor.invoke({
-                    "input": reduce_prompt
-                })
+                # Combine and deduplicate chunks
+                all_chunks = text_chunks + relevant_chunks
+                unique_chunks = list(set(all_chunks))
+
+                with open("test.txt", "w", encoding="utf-8") as file:
+                    for chunk in unique_chunks:
+                        file.write(chunk + "\n\n")
+                analysis = self.paper_analyzer.analyze(unique_chunks)
                 
                 
                 # Use the agent to extract structured information
