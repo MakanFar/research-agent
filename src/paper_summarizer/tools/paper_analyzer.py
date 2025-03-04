@@ -75,9 +75,9 @@ class PaperAnalyzer:
         Ensure all field names exactly match the schema.
         """
         
+        
         try:
             # The LLM call will be handled by the agent, we just prepare the text
             return analysis_prompt
-            
         except Exception as e:
             raise Exception(f"Error analyzing paper content: {str(e)}")
