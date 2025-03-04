@@ -16,7 +16,7 @@ class PaperAgent:
             openai_api_key=api_key
         )
         self.pdf_processor = PDFProcessor(api_key)
-        self.paper_analyzer = PaperAnalyzer(api_key)
+        self.paper_analyzer = PaperAnalyzer()
         
         self.tools = [
             Tool(
