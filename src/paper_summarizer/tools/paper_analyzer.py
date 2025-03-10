@@ -14,6 +14,7 @@ class PaperAnalyzer:
             "preprocessing": {"type": "string", "description": "Data preprocessing and noise handling steps"},
             "black_box_status": {"type": "boolean", "description": "Whether the model is considered a black box"},
             "evaluation_metrics": {"type": "string", "description": "Metrics used to evaluate model performance"},
+            "performance_results": {"type": "string", "description": "Performance results of models, including accuracy, precision, recall, F1-score, AUC, etc."},
             "species_breed": {"type": "string", "description": "Target species or breed, if applicable"},
             "ml_algorithm": {"type": "string", "description": "Machine learning algorithm or model type used"},
             "data_type": {"type": "string", "description": "Type of data used in the study"},
@@ -57,19 +58,20 @@ class PaperAnalyzer:
            - Data type: Specify data types used for training the model (images, text, clinical data, etc.)
            - AI goal: Describe the specific medical/clinical objective
            - Evaluation metrics: List all metrics (accuracy, precision, F1, etc.)
+           - Performance results: Extract and summarize key performance results
         
         4. Implementation:
            - Black box status: Mark true if model interpretability is not discussed
            - Clinical implementation: Mark true if mentions real-world deployment
         
         5. Species/Medical:
-           - Species/breed: Note animal types mentioned for the study
+           - Species/breed: Note animal types used for the study
 
         If information is truly not found after thorough search, use "unknown".
         For boolean fields, default to false only if confidently not mentioned.
 
         Paper excerpt:
-        {combined_text[:4000]}
+        {combined_text[:25000]}
 
         Return ONLY a valid JSON object, no additional text.
         Ensure all field names exactly match the schema.

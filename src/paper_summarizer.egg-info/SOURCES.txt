@@ -1,0 +1,7 @@
+setup.py
+src/paper_summarizer.egg-info/PKG-INFO
+src/paper_summarizer.egg-info/SOURCES.txt
+src/paper_summarizer.egg-info/dependency_links.txt
+src/paper_summarizer.egg-info/entry_points.txt
+src/paper_summarizer.egg-info/requires.txt
+src/paper_summarizer.egg-info/top_level.txt

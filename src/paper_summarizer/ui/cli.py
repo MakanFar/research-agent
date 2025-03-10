@@ -4,7 +4,7 @@ import json
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress
-from ..agents.paper_agent import PaperAgent
+from ..agents.summary_agent import SummaryAgent
 
 class CLI:
     def __init__(self):
@@ -87,7 +87,6 @@ class CLI:
             json.dump(results, f, indent=2)
         
         # Save table to HTML file
-        from rich.html import HTML
         output_html = os.path.join(output_dir, "paper_summaries.html")
         html_content = self.console.export_html(table)
         with open(output_html, 'w', encoding='utf-8') as f:
@@ -104,7 +103,7 @@ class CLI:
             config = self.load_config(config_path)
             
             # Initialize agent
-            agent = PaperAgent(config['openai_api_key'])
+            agent = SummaryAgent(config['openai_api_key'])
             
             # Get paper paths
             paper_paths = self.get_paper_paths(config['papers_directory'])
