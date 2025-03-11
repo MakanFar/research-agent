@@ -47,8 +47,17 @@ class PDFProcessor:
                     page.page_content = cleaned_text
                     cleaned_pages.append(page)
 
+            # Clean and validate text before chunking
+            cleaned_pages = []
+            for page in pages:
+                if hasattr(page, 'page_content'):
+                    # Remove vertical text artifacts and normalize spaces
+                    cleaned_text = ' '.join(page.page_content.split())
+                    page.page_content = cleaned_text
+                    cleaned_pages.append(page)
+
             chunks = self.text_splitter.split_documents(cleaned_pages)
-            
+
             if not chunks:
                 return {
                     'chunks': [],
