@@ -1,8 +1,7 @@
 import json
-import tiktoken  # OpenAI's tokenizer library
 from langchain.agents import create_openai_tools_agent
 from langchain.agents import AgentExecutor
-from langchain.chat_models import ChatOpenAI
+from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
 from langchain.tools import Tool
 from ..tools.pdf_processor import PDFProcessor
@@ -12,10 +11,9 @@ import re
 class SummaryAgent:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.llm = ChatOpenAI(
-            temperature=0,
-            model="gpt-4o",
-            openai_api_key=api_key
+        self.llm = Ollama(
+            model="deepseek",
+            temperature=0
         )
         self.pdf_processor = PDFProcessor(api_key)
         self.paper_analyzer = PaperAnalyzer()
@@ -45,12 +43,6 @@ class SummaryAgent:
             verbose=False
         )
 
-    def _count_tokens(self, text, model="gpt-4o"):
-        """
-        Count tokens in a given text using OpenAI's tokenizer.
-        """
-        encoding = tiktoken.encoding_for_model(model)
-        return len(encoding.encode(text))
 
     def _create_prompt(self):
         prompt = ChatPromptTemplate.from_messages([
@@ -110,30 +102,13 @@ class SummaryAgent:
 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
 
-                # Count input tokens before execution
                 input_text = f"""{analysis}"""
-                input_token_count = self._count_tokens(input_text)
-
-                if input_token_count > 30000:
-                    return {
-                        "error": f"Input token count ({input_token_count}) exceeds GPT-4o limit (30000).",
-                        "file": path
-                    }
 
                 # Use the agent executor
                 result = self.agent_executor.invoke({"input": input_text})
 
-                # Count output tokens
                 if isinstance(result, dict) and 'output' in result:
                     output_text = result['output']
-                    output_token_count = self._count_tokens(output_text)
-                    print(f"📊 Output Token Count: {output_token_count}")
-
-                    if output_token_count > 30000:
-                        return {
-                            "error": f"Output token count ({output_token_count}) exceeds GPT-4o limit (30000).",
-                            "file": path
-                        }
 
                     # Extract JSON from output
                     try:

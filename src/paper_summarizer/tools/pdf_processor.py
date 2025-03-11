@@ -1,11 +1,11 @@
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.vectorstores import FAISS
 
 class PDFProcessor:
     def __init__(self, api_key):
-        self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+        self.embeddings = OllamaEmbeddings(model="deepseek")
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=2000,
             chunk_overlap=200,
