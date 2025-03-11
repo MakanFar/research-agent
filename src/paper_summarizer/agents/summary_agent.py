@@ -68,9 +68,10 @@ class SummaryAgent:
                 vectorstore = processed_data['vectorstore']
                 # Get information from specific sections
                 queries = {
-                    "introduction background objective": 4,  # More context
-                    "methods methodology algorithm model": 4,  # More technical details
-                    "data dataset preprocessing cleaning": 4,  # Data handling
+                    "introduction background objective": 4,  # Context
+                    "methods methodology algorithm model": 4,  #  technical details
+                    "dataset": 2,  # Data
+                    "preprocessing normalization augmentation noise missing data": 4,  # Data handling
                     "discussion limitations": 4,  # Interpretations
                     "conclusion future work": 4  # Final remarks
                 }
