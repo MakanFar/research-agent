@@ -83,12 +83,10 @@ class SummaryAgent:
                     return {"error": "No content extracted from PDF", "file": path}
 
                 queries = {
-                    "introduction background objective": 4,
-                    "methods methodology algorithm model": 4,
-                    "dataset": 2,
-                    "preprocessing normalization augmentation noise missing data": 4,
-                    "discussion limitations": 4,
-                    "conclusion future work": 4
+                    "introduction objective": 2,
+                    "methods algorithm": 2,
+                    "dataset preprocessing": 2,
+                    "results discussion": 2
                 }
                 
                 relevant_chunks = []
@@ -112,13 +110,9 @@ class SummaryAgent:
 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
 
-                with open("test.txt", "w", encoding="utf-8") as file:
-                        file.write(analysis)
-
                 # Count input tokens before execution
                 input_text = f"""{analysis}"""
                 input_token_count = self._count_tokens(input_text)
-                print(f"📊 Input Token Count: {input_token_count}")
 
                 if input_token_count > 30000:
                     return {
