@@ -64,8 +64,22 @@ class SummaryAgent:
             try:
                 # First process the PDF and get chunks with embeddings
                 processed_data = self.pdf_processor.process(path)
+                
+                # Handle processing errors
+                if 'error' in processed_data:
+                    return {
+                        "error": processed_data['error'],
+                        "file": path
+                    }
+                
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
+                
+                if not chunks or not vectorstore:
+                    return {
+                        "error": "No content could be extracted from PDF",
+                        "file": path
+                    }
                 # Get information from specific sections
                 queries = {
                     "introduction background objective": 4,  # Context
