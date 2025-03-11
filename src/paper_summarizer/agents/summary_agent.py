@@ -42,7 +42,7 @@ class SummaryAgent:
         self.agent_executor = AgentExecutor(
             agent=self.agent,
             tools=self.tools,
-            verbose=True
+            verbose=False
         )
 
     def _count_tokens(self, text, model="gpt-4o"):
@@ -112,13 +112,10 @@ class SummaryAgent:
 
                 analysis = self.paper_analyzer.analyze(unique_chunks)
 
-                with open("test.txt", "w", encoding="utf-8") as file:
-                        file.write(analysis)
 
                 # Count input tokens before execution
                 input_text = f"""{analysis}"""
                 input_token_count = self._count_tokens(input_text)
-                print(f"📊 Input Token Count: {input_token_count}")
 
                 if input_token_count > 30000:
                     return {
@@ -133,7 +130,6 @@ class SummaryAgent:
                 if isinstance(result, dict) and 'output' in result:
                     output_text = result['output']
                     output_token_count = self._count_tokens(output_text)
-                    print(f"📊 Output Token Count: {output_token_count}")
 
                     if output_token_count > 30000:
                         return {
@@ -160,7 +156,6 @@ class SummaryAgent:
                 return {"error": str(e), "file": path}
 
         def process_paper(path):
-            print(path)
             try:
                 return analyze_single_paper(path)
             except Exception as e:
