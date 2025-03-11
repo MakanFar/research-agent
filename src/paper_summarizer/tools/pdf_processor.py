@@ -43,13 +43,17 @@ class PDFProcessor:
             for page in pages:
                 if hasattr(page, 'page_content'):
                     # Remove vertical text artifacts and normalize spaces
-                    text = page.page_content
-                    # Replace multiple spaces and newlines with single space
-                    text = ' '.join(text.split())
-                    # Remove any remaining vertical text artifacts
-                    text = text.replace('\n', ' ').replace('\r', ' ')
-                    text = ' '.join(c for c in text if ord(c) >= 32)
-                    page.page_content = text
+                    cleaned_text = ' '.join(page.page_content.split())
+                    page.page_content = cleaned_text
+                    cleaned_pages.append(page)
+
+            # Clean and validate text before chunking
+            cleaned_pages = []
+            for page in pages:
+                if hasattr(page, 'page_content'):
+                    # Remove vertical text artifacts and normalize spaces
+                    cleaned_text = ' '.join(page.page_content.split())
+                    page.page_content = cleaned_text
                     cleaned_pages.append(page)
 
             chunks = self.text_splitter.split_documents(cleaned_pages)
