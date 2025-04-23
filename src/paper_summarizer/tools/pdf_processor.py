@@ -1,4 +1,6 @@
 import os
+import urllib.parse
+from pathlib import Path
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -16,12 +18,11 @@ class PDFProcessor:
     def process(self, file_path):
         """Process a PDF file and return chunked text with embeddings"""
         try:
-            # Convert to absolute path with forward slashes to avoid URL interpretation issues
-            abs_path = os.path.abspath(file_path)
-            # Use file:// protocol to ensure it's treated as a local file
-            file_uri = f"file:///{abs_path.replace(os.sep, '/')}"
+            # Use direct file path instead of URI for PyPDFLoader
+            # This avoids issues with spaces and special characters in paths
+            file_path = os.path.abspath(file_path)
             
-            loader = PyPDFLoader(file_uri)
+            loader = PyPDFLoader(file_path)
             pages = loader.load()
             chunks = self.text_splitter.split_documents(pages)
             
