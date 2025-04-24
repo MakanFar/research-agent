@@ -18,10 +18,13 @@ class PDFProcessor:
     def process(self, file_path):
         """Process a PDF file and return chunked text with embeddings"""
         try:
-            # Use direct file path instead of URI for PyPDFLoader
-            # This avoids issues with spaces and special characters in paths
+            # Ensure we have a valid local file path
             file_path = os.path.abspath(file_path)
             
+            # Verify the file exists before attempting to load it
+            if not os.path.isfile(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+                
             loader = PyPDFLoader(file_path)
             pages = loader.load()
             chunks = self.text_splitter.split_documents(pages)

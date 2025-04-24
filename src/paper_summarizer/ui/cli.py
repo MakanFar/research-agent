@@ -38,7 +38,17 @@ class CLI:
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.lower().endswith('.pdf'):
-                    paper_paths.append(os.path.join(root, file))
+                    # Get the absolute path to ensure it's a valid file path
+                    file_path = os.path.abspath(os.path.join(root, file))
+                    # Verify the file exists and is accessible
+                    if os.path.isfile(file_path):
+                        paper_paths.append(file_path)
+                    else:
+                        self.console.print(f"[yellow]Warning: File not accessible: {file_path}")
+        
+        if not paper_paths:
+            self.console.print(f"[yellow]Warning: No PDF files found in {directory}")
+            
         return paper_paths
     
     def display_results(self, results, output_dir):
@@ -70,6 +80,7 @@ class CLI:
             table.add_row(
                 str(result.get('title', 'N/A'))[:100],
                 str(result.get('first_author', 'N/A'))[:50],
+                str(result.get('journal', 'N/A')),
                 str(result.get('publication_date', 'N/A')),
                 str(result.get('ai_goal', 'N/A'))[:100],
                 str(result.get('ml_algorithm', 'N/A'))[:50],
