@@ -2,9 +2,11 @@ import yaml
 import os
 import json
 import time
+import sys
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress
+from rich.panel import Panel
 from ..agents.summary_agent import SummaryAgent
 
 class CLI:
@@ -134,15 +136,33 @@ class CLI:
                         
                         # Add a delay between papers to avoid rate limits
                         if i < len(paper_paths) - 1:
-                            delay = 3  # 3 seconds between papers
+                            delay = 5  # Increased to 5 seconds between papers
                             self.console.print(f"[yellow]Waiting {delay} seconds before next paper...")
                             time.sleep(delay)
                     except Exception as e:
-                        self.console.print(f"[red]Error processing {path}: {str(e)}")
+                        error_msg = str(e)
+                        self.console.print(f"[red]Error processing {os.path.basename(path)}: {error_msg}")
+                        
+                        # Check for quota exceeded error
+                        if "quota exceeded" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
+                            self.console.print(Panel(
+                                "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
+                                "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
+                                "To fix this issue:\n"
+                                "1. Visit https://platform.openai.com/account/billing\n"
+                                "2. Add credits or update your payment method\n"
+                                "3. Check your usage limits at https://platform.openai.com/account/limits",
+                                title="API Quota Error",
+                                border_style="red"
+                            ))
+                            # Exit the program since we can't continue without API credits
+                            self.console.print("[yellow]Exiting program due to API quota limitations.")
+                            sys.exit(1)
+                            
                         # Add error to results
                         results.append({
                             'file': path,
-                            'error': str(e)
+                            'error': error_msg
                         })
                     finally:
                         progress.update(task, advance=1)
@@ -154,4 +174,18 @@ class CLI:
             self.display_results(results, config['output_directory'])
             
         except Exception as e:
-            self.console.print(f"[red]Error: {str(e)}")
+            error_msg = str(e)
+            self.console.print(f"[red]Error: {error_msg}")
+            
+            # Check for quota exceeded error at the top level
+            if "quota exceeded" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
+                self.console.print(Panel(
+                    "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
+                    "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
+                    "To fix this issue:\n"
+                    "1. Visit https://platform.openai.com/account/billing\n"
+                    "2. Add credits or update your payment method\n"
+                    "3. Check your usage limits at https://platform.openai.com/account/limits",
+                    title="API Quota Error",
+                    border_style="red"
+                ))
