@@ -145,19 +145,26 @@ class CLI:
                         
                         # Check for quota exceeded error
                         if "quota exceeded" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
-                            self.console.print(Panel(
-                                "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
-                                "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
-                                "To fix this issue:\n"
-                                "1. Visit https://platform.openai.com/account/billing\n"
-                                "2. Add credits or update your payment method\n"
-                                "3. Check your usage limits at https://platform.openai.com/account/limits",
-                                title="API Quota Error",
-                                border_style="red"
-                            ))
-                            # Exit the program since we can't continue without API credits
-                            self.console.print("[yellow]Exiting program due to API quota limitations.")
-                            sys.exit(1)
+                            if "switched to local embeddings" in error_msg.lower():
+                                # We're using local embeddings, so continue
+                                self.console.print(Panel(
+                                    "[bold yellow]OpenAI API quota exceeded![/bold yellow]\n\n"
+                                    "Continuing with local embedding model. Note that results may be less accurate.",
+                                    title="Using Local Fallback",
+                                    border_style="yellow"
+                                ))
+                            else:
+                                self.console.print(Panel(
+                                    "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
+                                    "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
+                                    "To fix this issue:\n"
+                                    "1. Visit https://platform.openai.com/account/billing\n"
+                                    "2. Add credits or update your payment method\n"
+                                    "3. Check your usage limits at https://platform.openai.com/account/limits\n\n"
+                                    "The program will attempt to use a local embedding model as a fallback.",
+                                    title="API Quota Error",
+                                    border_style="red"
+                                ))
                             
                         # Add error to results
                         results.append({
@@ -179,13 +186,23 @@ class CLI:
             
             # Check for quota exceeded error at the top level
             if "quota exceeded" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
-                self.console.print(Panel(
-                    "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
-                    "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
-                    "To fix this issue:\n"
-                    "1. Visit https://platform.openai.com/account/billing\n"
-                    "2. Add credits or update your payment method\n"
-                    "3. Check your usage limits at https://platform.openai.com/account/limits",
-                    title="API Quota Error",
-                    border_style="red"
-                ))
+                if "switched to local embeddings" in error_msg.lower():
+                    # We're using local embeddings, so continue
+                    self.console.print(Panel(
+                        "[bold yellow]OpenAI API quota exceeded![/bold yellow]\n\n"
+                        "Continuing with local embedding model. Note that results may be less accurate.",
+                        title="Using Local Fallback",
+                        border_style="yellow"
+                    ))
+                else:
+                    self.console.print(Panel(
+                        "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
+                        "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
+                        "To fix this issue:\n"
+                        "1. Visit https://platform.openai.com/account/billing\n"
+                        "2. Add credits or update your payment method\n"
+                        "3. Check your usage limits at https://platform.openai.com/account/limits\n\n"
+                        "The program will attempt to use a local embedding model as a fallback.",
+                        title="API Quota Error",
+                        border_style="red"
+                    ))
