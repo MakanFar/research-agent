@@ -1,6 +1,7 @@
 import yaml
 import os
 import json
+import time
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress
@@ -119,8 +120,32 @@ class CLI:
             # Process papers with progress bar
             with Progress() as progress:
                 task = progress.add_task("[cyan]Analyzing papers...", total=len(paper_paths))
-                results = agent.analyze_papers(paper_paths)
-                progress.update(task, advance=1)
+                
+                # Add a delay between processing papers to avoid rate limits
+                self.console.print("[yellow]Note: Processing papers with delay to avoid rate limits...")
+                results = []
+                
+                for i, path in enumerate(paper_paths):
+                    try:
+                        # Process one paper at a time
+                        self.console.print(f"[cyan]Processing paper {i+1}/{len(paper_paths)}: {os.path.basename(path)}")
+                        paper_result = agent.analyze_papers([path])
+                        results.extend(paper_result)
+                        
+                        # Add a delay between papers to avoid rate limits
+                        if i < len(paper_paths) - 1:
+                            delay = 3  # 3 seconds between papers
+                            self.console.print(f"[yellow]Waiting {delay} seconds before next paper...")
+                            time.sleep(delay)
+                    except Exception as e:
+                        self.console.print(f"[red]Error processing {path}: {str(e)}")
+                        # Add error to results
+                        results.append({
+                            'file': path,
+                            'error': str(e)
+                        })
+                    finally:
+                        progress.update(task, advance=1)
             
             # Create output directory if it doesn't exist
             os.makedirs(config['output_directory'], exist_ok=True)
