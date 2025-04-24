@@ -67,7 +67,8 @@ class CLI:
             ("AI Goal", "magenta"),
             ("ML Algorithm", "blue"),
             ("Data Type", "yellow"),
-            ("Evaluation Metrics", "green")
+            ("Evaluation Metrics", "green"),
+            ("Notes", "dim")
         ]
         
         for col_name, style in columns:
@@ -88,7 +89,8 @@ class CLI:
                 str(result.get('ai_goal', 'N/A'))[:100],
                 str(result.get('ml_algorithm', 'N/A'))[:50],
                 str(result.get('data_type', 'N/A'))[:50],
-                str(result.get('evaluation_metrics', 'N/A'))[:100]
+                str(result.get('evaluation_metrics', 'N/A'))[:100],
+                str(result.get('note', '')) if result.get('using_fallback', False) else ""
             )
         
         # Display table in console
@@ -111,6 +113,13 @@ class CLI:
             
             # Initialize agent
             agent = SummaryAgent(config['openai_api_key'])
+            
+            # Check if local embeddings are available as fallback
+            local_available = agent.pdf_processor.check_local_embeddings_available()
+            if local_available:
+                self.console.print("[green]Local embedding model is available as fallback if OpenAI API fails")
+            else:
+                self.console.print("[yellow]Warning: Local embedding model could not be initialized. If OpenAI API fails, processing will stop.")
             
             # Get paper paths
             paper_paths = self.get_paper_paths(config['papers_directory'])

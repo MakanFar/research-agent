@@ -29,13 +29,21 @@ class PDFProcessor:
         """Initialize the local embedding model when needed"""
         try:
             # Use a small, fast model for embeddings
+            print("Initializing local embedding model (this may take a moment)...")
             self.local_embeddings = HuggingFaceEmbeddings(
                 model_name="all-MiniLM-L6-v2"
             )
+            print("Local embedding model initialized successfully")
             return True
         except Exception as e:
             print(f"Failed to initialize local embeddings: {str(e)}")
             return False
+            
+    def check_local_embeddings_available(self):
+        """Check if local embeddings can be initialized"""
+        if self.local_embeddings is not None:
+            return True
+        return self._initialize_local_embeddings()
     
     def switch_to_local_embeddings(self):
         """Switch to local embeddings model as fallback"""
