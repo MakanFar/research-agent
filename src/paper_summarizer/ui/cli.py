@@ -70,7 +70,6 @@ class CLI:
             table.add_row(
                 str(result.get('title', 'N/A'))[:100],
                 str(result.get('first_author', 'N/A'))[:50],
-                str(result.get('journal', 'N/A'))[:50],
                 str(result.get('publication_date', 'N/A')),
                 str(result.get('ai_goal', 'N/A'))[:100],
                 str(result.get('ml_algorithm', 'N/A'))[:50],
@@ -86,15 +85,9 @@ class CLI:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
         
-        # Save table to HTML file
-        output_html = os.path.join(output_dir, "paper_summaries.html")
-        html_content = self.console.export_html(table)
-        with open(output_html, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-            
         self.console.print(f"\n[green]Results saved to:")
         self.console.print(f"- JSON: {output_file}")
-        self.console.print(f"- HTML: {output_html}")
+       
     
     def run(self, config_path="config.yaml"):
         """Main CLI execution"""
