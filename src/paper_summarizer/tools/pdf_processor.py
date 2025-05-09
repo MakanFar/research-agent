@@ -24,25 +24,35 @@ class PDFProcessor:
     
     def process(self, file_path):
         """Process a PDF file and return chunked text with embeddings"""
+        
+                
         try:
-            # Ensure we have a valid local file path
-            
             loader = PyPDFLoader(file_path)
             pages = loader.load()
+        except Exception as e:
+            raise Exception(f"Error loading PDF: {str(e)}")
 
+        try:
             chunks = self.text_splitter.split_documents(pages)
-            
+        except Exception as e:
+            raise Exception(f"Error splitting text: {str(e)}")
+        
+        try:
             # Count total tokens in all chunks
             total_tokens = sum(self.num_tokens(chunk.page_content) for chunk in chunks)
-            
+        except Exception as e:
+            raise Exception(f"Error counting tokens: {str(e)}")
+        
+        try:
             # Create vector store from the chunks
             vectorstore = FAISS.from_documents(chunks, self.embeddings)
-            
-            # Return both chunks and vectorstore for semantic search
-            return {
-                'chunks': chunks,
-                'vectorstore': vectorstore,
-                'total_tokens': total_tokens
-            }
         except Exception as e:
-            raise Exception(f"Error processing PDF {file_path}: {str(e)}")
+            raise Exception(f"Error creating vector store: {str(e)}")
+        
+        # Return both chunks and vectorstore for semantic search
+        return {
+            'chunks': chunks,
+            'vectorstore': vectorstore,
+            'total_tokens': total_tokens
+        }
+       

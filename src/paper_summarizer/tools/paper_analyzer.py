@@ -33,25 +33,37 @@ class PaperAnalyzer:
         
         
         analysis_prompt = f"""
-        Extract key information from this veterinary AI/ML paper. Return a JSON object with these fields:
-        - first_author: First listed author's name
-        - publication_date: Publication date
-        - journal: Journal name
-        - title: Paper title
-        - external_training_data: Boolean if external datasets used
-        - external_validation_data: Boolean if external validation
-        - small_dataset_techniques: Methods for small data
-        - data_heterogeneity: Data variety description
-        - preprocessing: Data preparation steps
-        - black_box_status: Boolean if no XAI used
-        - evaluation_metrics: Performance metrics used
-        - performance_results: Key results
-        - species_breed: Animal types studied
-        - ml_algorithm: ML models used
-        - data_type: Type of data analyzed
-        - ai_goal: Clinical objective
-        - clinical_implementation: Boolean if deployed
+        Be thorough and precise in your analysis. Search for both explicit and implicit information and follow the instructions.
 
+        Instructions:
+        - Don't add any knowledge from yourself, and don't make assumptions. Only rely on the information provided in the paper
+        - Be thorough and precise in your analysis.
+        - Write the results concise 
+        - Look for information in all sections.
+        - If information is not found in the paper, return "unknown", but only after a thorough search.
+        - For boolean fields, default to False only if the information is confidently not mentioned.
+
+        Extract key information from this paper excerpt. Return a JSON object with these fields:
+        - first_author: First listed author's name on paper
+        - publication_date: Year that paper was published
+        - title: Paper title
+        - data_type: Type of data used in the study such as radiology, clinicopathologic, or text
+        - species_breed: Target species
+        - ml_algorithm: Types Model used in the study
+        - ai_goal: Clinical objective of the study
+        - clinical_implementation: Boolean. Set true if study was actually deployed and adopted in real life.
+        - external_training_data: Boolean. Set True if external datasets such as data from multiple sources are used
+        - external_validation_data: Boolean. Set to True if the model has been evaluated using external datasets or data from other sources. 
+        - small_dataset: Boolean. Set to True if the paper mentions lack of data OR if the data used to train the model is less than 1000 samples
+        - small_dataset_techniques: In cases of limited data, mention methods that authors use to mitigate the issue—such as transfer learning, data augmentation, and similar techniques.
+        - data_heterogeneity: Mention of the authors use heterogeneous data or attempt to add variability through different types of data, data from various sources, different collection processes, or any other methods that could increase heterogeneity.
+        - preprocessing: Data preprocessing techniques used to to handel the noise, or missing data, or class imbalance
+        - regularization: regularization techniques used to stop model from overfiting such as early stopping, dropout or l1 and l2 regularization
+        - black_box_status: Boolean. Set to True if the model lacked explainability methods such as feature importance, Grad-CAM, or other means of providing interpretability.
+        - evaluation_metrics: Performance metrics used for evaluting the model
+        - performance_results: Key final results
+        - ethics: Ethical implications discussed by the authors
+        
         Return concise JSON only, no explanations.
         Paper excerpt:
         {combined_text[:25000]}

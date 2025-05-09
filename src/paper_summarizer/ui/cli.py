@@ -1,12 +1,9 @@
 import yaml
 import os
 import json
-import time
-import sys
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress
-from rich.panel import Panel
 from ..agents.summary_agent import SummaryAgent
 
 class CLI:
@@ -36,8 +33,10 @@ class CLI:
             raise Exception(f"Error parsing configuration file: {str(e)}")
     
     def get_paper_paths(self, directory):
+       
         """Get all PDF files from directory"""
         paper_paths = []
+        
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.lower().endswith('.pdf'):
@@ -67,8 +66,7 @@ class CLI:
             ("AI Goal", "magenta"),
             ("ML Algorithm", "blue"),
             ("Data Type", "yellow"),
-            ("Evaluation Metrics", "green"),
-            ("Notes", "dim")
+            ("Evaluation Metrics", "green")
         ]
         
         for col_name, style in columns:
@@ -89,8 +87,7 @@ class CLI:
                 str(result.get('ai_goal', 'N/A'))[:100],
                 str(result.get('ml_algorithm', 'N/A'))[:50],
                 str(result.get('data_type', 'N/A'))[:50],
-                str(result.get('evaluation_metrics', 'N/A'))[:100],
-                str(result.get('note', '')) if result.get('using_fallback', False) else ""
+                str(result.get('evaluation_metrics', 'N/A'))[:100]
             )
         
         # Display table in console
@@ -114,13 +111,6 @@ class CLI:
             # Initialize agent
             agent = SummaryAgent(config['openai_api_key'])
             
-            # Check if local embeddings are available as fallback
-            local_available = agent.pdf_processor.check_local_embeddings_available()
-            if local_available:
-                self.console.print("[green]Local embedding model is available as fallback if OpenAI API fails")
-            else:
-                self.console.print("[yellow]Warning: Local embedding model could not be initialized. If OpenAI API fails, processing will stop.")
-            
             # Get paper paths
             paper_paths = self.get_paper_paths(config['papers_directory'])
             
@@ -131,57 +121,8 @@ class CLI:
             # Process papers with progress bar
             with Progress() as progress:
                 task = progress.add_task("[cyan]Analyzing papers...", total=len(paper_paths))
-                
-                # Add a delay between processing papers to avoid rate limits
-                self.console.print("[yellow]Note: Processing papers with delay to avoid rate limits...")
-                results = []
-                
-                for i, path in enumerate(paper_paths):
-                    try:
-                        # Process one paper at a time
-                        self.console.print(f"[cyan]Processing paper {i+1}/{len(paper_paths)}: {os.path.basename(path)}")
-                        paper_result = agent.analyze_papers([path])
-                        results.extend(paper_result)
-                        
-                        # Add a delay between papers to avoid rate limits
-                        if i < len(paper_paths) - 1:
-                            delay = 5  # Increased to 5 seconds between papers
-                            self.console.print(f"[yellow]Waiting {delay} seconds before next paper...")
-                            time.sleep(delay)
-                    except Exception as e:
-                        error_msg = str(e)
-                        self.console.print(f"[red]Error processing {os.path.basename(path)}: {error_msg}")
-                        
-                        # Check for quota exceeded error
-                        if "quota exceeded" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
-                            if "switched to local embeddings" in error_msg.lower():
-                                # We're using local embeddings, so continue
-                                self.console.print(Panel(
-                                    "[bold yellow]OpenAI API quota exceeded![/bold yellow]\n\n"
-                                    "Continuing with local embedding model. Note that results may be less accurate.",
-                                    title="Using Local Fallback",
-                                    border_style="yellow"
-                                ))
-                            else:
-                                self.console.print(Panel(
-                                    "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
-                                    "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
-                                    "To fix this issue:\n"
-                                    "1. Visit https://platform.openai.com/account/billing\n"
-                                    "2. Add credits or update your payment method\n"
-                                    "3. Check your usage limits at https://platform.openai.com/account/limits\n\n"
-                                    "The program will attempt to use a local embedding model as a fallback.",
-                                    title="API Quota Error",
-                                    border_style="red"
-                                ))
-                            
-                        # Add error to results
-                        results.append({
-                            'file': path,
-                            'error': error_msg
-                        })
-                    finally:
-                        progress.update(task, advance=1)
+                results = agent.analyze_papers(paper_paths)
+                progress.update(task, advance=1)
             
             # Create output directory if it doesn't exist
             os.makedirs(config['output_directory'], exist_ok=True)
@@ -190,28 +131,4 @@ class CLI:
             self.display_results(results, config['output_directory'])
             
         except Exception as e:
-            error_msg = str(e)
-            self.console.print(f"[red]Error: {error_msg}")
-            
-            # Check for quota exceeded error at the top level
-            if "quota exceeded" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
-                if "switched to local embeddings" in error_msg.lower():
-                    # We're using local embeddings, so continue
-                    self.console.print(Panel(
-                        "[bold yellow]OpenAI API quota exceeded![/bold yellow]\n\n"
-                        "Continuing with local embedding model. Note that results may be less accurate.",
-                        title="Using Local Fallback",
-                        border_style="yellow"
-                    ))
-                else:
-                    self.console.print(Panel(
-                        "[bold red]OpenAI API quota exceeded![/bold red]\n\n"
-                        "Your OpenAI API account has run out of credits or hit your maximum monthly spend limit.\n\n"
-                        "To fix this issue:\n"
-                        "1. Visit https://platform.openai.com/account/billing\n"
-                        "2. Add credits or update your payment method\n"
-                        "3. Check your usage limits at https://platform.openai.com/account/limits\n\n"
-                        "The program will attempt to use a local embedding model as a fallback.",
-                        title="API Quota Error",
-                        border_style="red"
-                    ))
+            self.console.print(f"[red]Error: {str(e)}")
