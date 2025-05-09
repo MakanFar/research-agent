@@ -32,9 +32,6 @@ class PaperAnalyzer:
         ])
         
         
-        # Combine processed chunks into a single text
-        combined_text = "\n".join(processed_chunks)
-        
         analysis_prompt = f"""
         Be thorough and precise in your analysis. Search for both explicit and implicit information and follow the instructions.
 
