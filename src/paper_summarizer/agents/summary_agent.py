@@ -1,4 +1,5 @@
 import json
+import tiktoken
 from langchain.agents import create_openai_tools_agent
 from langchain.agents import AgentExecutor
 from langchain.chat_models import ChatOpenAI
@@ -18,6 +19,9 @@ class SummaryAgent:
         )
         self.pdf_processor = PDFProcessor(api_key)
         self.paper_analyzer = PaperAnalyzer()
+        self.tokenizer = tiktoken.encoding_for_model("gpt-4o")
+        # Set token budget (GPT-4o has a 128k context window, but we'll stay well under the limit)
+        self.max_tokens_per_request = 20000  # Conservative limit to avoid rate limits
         
         self.tools = [
             Tool(
@@ -63,20 +67,22 @@ class SummaryAgent:
 
         def analyze_single_paper(path):
             try:
-          
                 # Process the PDF once and unpack results
                 processed_data = self.pdf_processor.process(path)
                 chunks = processed_data['chunks']
                 vectorstore = processed_data['vectorstore']
+                total_tokens = processed_data.get('total_tokens', 0)
+                
+                print(f"PDF {Path(path).name} contains approximately {total_tokens} tokens")
                 
                 # Define key sections to extract with their importance (number of chunks)
                 section_queries = {
-                    "introduction background objective": 3,          # Context
-                    "methods methodology algorithm model": 4,         # Technical details
-                    "dataset": 2,                                    # Data
-                    "preprocessing normalization augmentation": 4,    # Data handling
-                    "discussion limitations": 3,                      # Interpretations
-                    "conclusion future work": 3                       # Final remarks
+                    "introduction background objective": 2,          # Context
+                    "methods methodology algorithm model": 3,         # Technical details
+                    "dataset": 1,                                    # Data
+                    "preprocessing normalization augmentation": 2,    # Data handling
+                    "discussion limitations": 2,                      # Interpretations
+                    "conclusion future work": 2                       # Final remarks
                 }
                 
                 # Get the first chunk for context (if available)
@@ -99,7 +105,26 @@ class SummaryAgent:
                             unique_chunks.add(content)
                             result_chunks.append(content)
 
+                # Count tokens in the combined chunks
+                combined_text = " ".join(result_chunks)
+                token_count = len(self.tokenizer.encode(combined_text))
+                
+                # If we have too many tokens, reduce the number of chunks
+                if token_count > self.max_tokens_per_request:
+                    print(f"Warning: {token_count} tokens exceeds budget of {self.max_tokens_per_request}")
+                    # Keep reducing until we're under budget
+                    while token_count > self.max_tokens_per_request and len(result_chunks) > 1:
+                        result_chunks.pop()  # Remove the last chunk
+                        combined_text = " ".join(result_chunks)
+                        token_count = len(self.tokenizer.encode(combined_text))
+                    
+                    print(f"Reduced to {len(result_chunks)} chunks with {token_count} tokens")
+                
                 analysis = self.paper_analyzer.analyze(result_chunks)
+                
+                # Count tokens in the analysis
+                analysis_tokens = len(self.tokenizer.encode(analysis))
+                print(f"Analysis contains {analysis_tokens} tokens")
                 
                 # Use the agent to extract structured information
                 result = self.agent_executor.invoke({
