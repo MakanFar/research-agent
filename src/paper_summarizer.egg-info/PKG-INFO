@@ -1,0 +1,9 @@
+Metadata-Version: 2.2
+Name: paper_summarizer
+Version: 0.1.0
+Requires-Dist: langchain
+Requires-Dist: openai
+Requires-Dist: rich
+Requires-Dist: pyyaml
+Requires-Dist: pypdf
+Dynamic: requires-dist

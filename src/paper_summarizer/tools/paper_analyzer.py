@@ -1,6 +1,7 @@
 import json
 
 class PaperAnalyzer:
+    
     def __init__(self):
         self.schema = {
             "first_author": {"type": "string", "description": "First author's name"},
@@ -14,6 +15,7 @@ class PaperAnalyzer:
             "preprocessing": {"type": "string", "description": "Data preprocessing and noise handling steps"},
             "black_box_status": {"type": "boolean", "description": "Whether the model is considered a black box"},
             "evaluation_metrics": {"type": "string", "description": "Metrics used to evaluate model performance"},
+            "performance_results": {"type": "string", "description": "Performance results of models, including accuracy, precision, recall, F1-score, AUC, etc."},
             "species_breed": {"type": "string", "description": "Target species or breed, if applicable"},
             "ml_algorithm": {"type": "string", "description": "Machine learning algorithm or model type used"},
             "data_type": {"type": "string", "description": "Type of data used in the study"},
@@ -21,118 +23,53 @@ class PaperAnalyzer:
             "clinical_implementation": {"type": "boolean", "description": "Whether the model has been implemented clinically or commercially"}
         }
     
-    def _map_chunk(self, chunk):
-        """Analyze a single chunk of text"""
-        # Handle both string and Document objects
-        text = chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
-        
-        map_prompt = f"""
-        Analyze this section of a research paper and extract key information.
-        Focus on finding specific details that match these categories:
-        
-        1. Paper metadata (authors, dates, journal)
-        2. Data handling (external data, preprocessing)
-        3. ML/AI details (algorithms, metrics)
-        4. Implementation details
-        5. Species/medical information
-        
-        Text section:
-        {text}
-        
-        Return ONLY a valid JSON object with any found information, no additional text.
-        Only include fields where you found relevant information.
-        """
-        
-        return map_prompt
-
-    def _reduce_results(self, mapped_results):
-        """Combine and reconcile multiple analysis results"""
-        reduce_prompt = f"""
-        Combine these separate paper analysis results into a single coherent summary.
-        Resolve any conflicts by choosing the most specific or detailed information.
-        
-        Analysis sections:
-        {json.dumps(mapped_results, indent=2)}
-        
-        Required format: Return a JSON object with these exact fields:
-        {json.dumps(self.schema, indent=2)}
-        
-        Guidelines:
-        1. Merge all found metadata, keeping most complete information
-        2. Combine all preprocessing steps and techniques
-        3. List all evaluation metrics found
-        4. Use most detailed algorithm descriptions
-        5. Set boolean fields true if any section indicates true
-        
-        Return ONLY a valid JSON object, no additional text.
-        """
-        
-        return reduce_prompt
-
     def analyze(self, text_chunks):
-        """Analyze paper content using map-reduce approach"""
-        # Map phase - analyze each chunk separately
-        mapped_results = []
-        chunk_size = 2000  # Process 2000 characters at a time
+        """Analyze paper content and extract structured information"""
+        # Handle both string and Document objects
+        combined_text = "\n".join([
+            chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
+            for chunk in text_chunks
+        ])
         
-        # Split very large chunks if needed
-        processed_chunks = []
-        for chunk in text_chunks:
-            text = chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
-            if len(text) > chunk_size:
-                # Split into smaller chunks, trying to break at sentences
-                parts = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
-                processed_chunks.extend(parts)
-            else:
-                processed_chunks.append(text)
-        
-        # Create a simplified schema for the prompt
-        simple_schema = {k: v["description"] for k, v in self.schema.items()}
         
         # Combine processed chunks into a single text
         combined_text = "\n".join(processed_chunks)
         
         analysis_prompt = f"""
-        You are an expert research paper analyzer specializing in AI/ML papers. Extract specific information from this paper excerpt.
-        Be thorough and precise in your analysis. Search for both explicit and implicit information.
+        Be thorough and precise in your analysis. Search for both explicit and implicit information and follow the instructions.
 
-        Required format: Return a JSON object with these exact fields:
-        {json.dumps(simple_schema)}
+        Instructions:
+        - Don't add any knowledge from yourself, and don't make assumptions. Only rely on the information provided in the paper
+        - Be thorough and precise in your analysis.
+        - Write the results concise 
+        - Look for information in all sections.
+        - If information is not found in the paper, return "unknown", but only after a thorough search.
+        - For boolean fields, default to False only if the information is confidently not mentioned.
 
-        Detailed Guidelines:
-        1. Paper Metadata:
-           - First author: Look in title, header, author list (take first listed)
-           - Publication date: Check header, footer, submission/acceptance dates
-           - Journal: Search header, footer, citation info
-           - Title: Extract complete paper title
+        Extract key information from this paper excerpt. Return a JSON object with these fields:
+        - first_author: First listed author's name on paper
+        - publication_date: Year that paper was published
+        - title: Paper title
+        - data_type: Type of data used in the study such as radiology, clinicopathologic, or text
+        - species_breed: Target species
+        - ml_algorithm: Types Model used in the study
+        - ai_goal: Clinical objective of the study
+        - clinical_implementation: Boolean. Set true if study was actually deployed and adopted in real life.
+        - external_training_data: Boolean. Set True if external datasets such as data from multiple sources are used
+        - external_validation_data: Boolean. Set to True if the model has been evaluated using external datasets or data from other sources. 
+        - small_dataset: Boolean. Set to True if the paper mentions lack of data OR if the data used to train the model is less than 1000 samples
+        - small_dataset_techniques: In cases of limited data, mention methods that authors use to mitigate the issue—such as transfer learning, data augmentation, and similar techniques.
+        - data_heterogeneity: Mention of the authors use heterogeneous data or attempt to add variability through different types of data, data from various sources, different collection processes, or any other methods that could increase heterogeneity.
+        - preprocessing: Data preprocessing techniques used to to handel the noise, or missing data, or class imbalance
+        - regularization: regularization techniques used to stop model from overfiting such as early stopping, dropout or l1 and l2 regularization
+        - black_box_status: Boolean. Set to True if the model lacked explainability methods such as feature importance, Grad-CAM, or other means of providing interpretability.
+        - evaluation_metrics: Performance metrics used for evaluting the model
+        - performance_results: Key final results
+        - ethics: Ethical implications discussed by the authors
         
-        2. Data & Methodology:
-           - External data: Mark true if mentions external datasets, databases, or public data
-           - Small dataset techniques: Look for data augmentation, transfer learning, etc.
-           - Data heterogeneity: Note any mentions of data variety, using different datasets or handling different data types
-           - Preprocessing: List all data cleaning, normalization, or preparation steps
-        
-        3. ML/AI Specifics:
-           - ML algorithm: Include final models used  (CNN, RNN, etc.)
-           - Data type: Specify data types used for training the model (images, text, clinical data, etc.)
-           - AI goal: Describe the specific medical/clinical objective
-           - Evaluation metrics: List all metrics (accuracy, precision, F1, etc.)
-        
-        4. Implementation:
-           - Black box status: Mark true if model interpretability is not discussed
-           - Clinical implementation: Mark true if mentions real-world deployment
-        
-        5. Species/Medical:
-           - Species/breed: Note animal types mentioned for the study
-
-        If information is truly not found after thorough search, use "unknown".
-        For boolean fields, default to false only if confidently not mentioned.
-
+        Return concise JSON only, no explanations.
         Paper excerpt:
-        {combined_text[:4000]}
-
-        Return ONLY a valid JSON object, no additional text.
-        Ensure all field names exactly match the schema.
+        {combined_text[:25000]}
         """
         
         

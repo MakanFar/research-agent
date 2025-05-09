@@ -4,7 +4,7 @@ import json
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress
-from ..agents.paper_agent import PaperAgent
+from ..agents.summary_agent import SummaryAgent
 
 class CLI:
     def __init__(self):
@@ -33,12 +33,24 @@ class CLI:
             raise Exception(f"Error parsing configuration file: {str(e)}")
     
     def get_paper_paths(self, directory):
+       
         """Get all PDF files from directory"""
         paper_paths = []
+        
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.lower().endswith('.pdf'):
-                    paper_paths.append(os.path.join(root, file))
+                    # Get the absolute path to ensure it's a valid file path
+                    file_path = os.path.abspath(os.path.join(root, file))
+                    # Verify the file exists and is accessible
+                    if os.path.isfile(file_path):
+                        paper_paths.append(file_path)
+                    else:
+                        self.console.print(f"[yellow]Warning: File not accessible: {file_path}")
+        
+        if not paper_paths:
+            self.console.print(f"[yellow]Warning: No PDF files found in {directory}")
+            
         return paper_paths
     
     def display_results(self, results, output_dir):
@@ -70,7 +82,7 @@ class CLI:
             table.add_row(
                 str(result.get('title', 'N/A'))[:100],
                 str(result.get('first_author', 'N/A'))[:50],
-                str(result.get('journal', 'N/A'))[:50],
+                str(result.get('journal', 'N/A')),
                 str(result.get('publication_date', 'N/A')),
                 str(result.get('ai_goal', 'N/A'))[:100],
                 str(result.get('ml_algorithm', 'N/A'))[:50],
@@ -86,16 +98,9 @@ class CLI:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
         
-        # Save table to HTML file
-        from rich.html import HTML
-        output_html = os.path.join(output_dir, "paper_summaries.html")
-        html_content = self.console.export_html(table)
-        with open(output_html, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-            
         self.console.print(f"\n[green]Results saved to:")
         self.console.print(f"- JSON: {output_file}")
-        self.console.print(f"- HTML: {output_html}")
+       
     
     def run(self, config_path="config.yaml"):
         """Main CLI execution"""
@@ -104,7 +109,7 @@ class CLI:
             config = self.load_config(config_path)
             
             # Initialize agent
-            agent = PaperAgent(config['openai_api_key'])
+            agent = SummaryAgent(config['openai_api_key'])
             
             # Get paper paths
             paper_paths = self.get_paper_paths(config['papers_directory'])
