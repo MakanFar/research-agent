@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="paper_summarizer",
+    name="research_agent",
     version="0.1.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
@@ -9,13 +9,12 @@ setup(
         "langchain",
         "openai",
         "rich",
-        "pyyaml",
-        "pypdf",
-        "faiss-cpu"
+        "langchain-community",
+        "langchain-openai"
     ],
     entry_points={
         "console_scripts": [
-            "paper-summarizer=paper_summarizer.__main__:main",
+            "research-agent=research_agent.__main__:main",
         ],
     },
 )

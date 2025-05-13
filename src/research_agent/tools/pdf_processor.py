@@ -2,7 +2,6 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-import tiktoken
 
 class PDFProcessor:
     def __init__(self, api_key):
@@ -12,8 +11,7 @@ class PDFProcessor:
             chunk_overlap=200,  
             separators=["\n\n", "\n", ".", "!", "?", ";", " ", ""]
         )
-        # Initialize tokenizer for GPT-4
-        self.tokenizer = tiktoken.encoding_for_model("gpt-4o")
+
 
     
     def process(self, file_path):

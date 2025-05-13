@@ -1,4 +1,26 @@
 # Configuration file for Paper Summarizer
-openai_api_key: ""
+openai_api_key: "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"
 papers_directory: "./papers" 
 output_directory: "./output"
+
+meta_data: "
+        - first_author: First listed author's name on paper
+        - publication_date: Year that paper was published
+        - title: Paper title
+        - data_type: Type of data used in the study such as radiology, clinicopathologic, or text
+        - species_breed: Target species
+        - ml_algorithm: Types Model used in the study
+        - ai_goal: Clinical objective of the study
+        - clinical_implementation: Boolean. Set true if study was actually deployed and adopted in real life.
+        - external_training_data: Boolean. Set True if external datasets such as data from multiple sources are used
+        - external_validation_data: Boolean. Set to True if the model has been evaluated using external datasets or data from other sources. 
+        - small_dataset: Boolean. Set to True if the paper mentions lack of data OR if the data used to train the model is less than 1000 samples
+        - small_dataset_techniques: In cases of limited data, mention methods that authors use to mitigate the issue—such as transfer learning, data augmentation, and similar techniques.
+        - data_heterogeneity: Mention of the authors use heterogeneous data or attempt to add variability through different types of data, data from various sources, different collection processes, or any other methods that could increase heterogeneity.
+        - preprocessing: Data preprocessing techniques used to to handel the noise, or missing data, or class imbalance
+        - regularization: regularization techniques used to stop model from overfiting such as early stopping, dropout or l1 and l2 regularization
+        - black_box_status: Boolean. Set to True if the model lacked explainability methods such as feature importance, Grad-CAM, or other means of providing interpretability.
+        - evaluation_metrics: Performance metrics used for evaluting the model
+        - performance_results: Key final performance results
+        - ethics: Ethical implications discussed by the authors
+          "

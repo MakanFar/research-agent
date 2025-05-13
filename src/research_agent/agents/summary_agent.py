@@ -5,8 +5,9 @@ from ..tools.pdf_processor import PDFProcessor
 from pathlib import Path
 
 class SummaryAgent:
-    def __init__(self, api_key):
+    def __init__(self, api_key, meta_data):
         self.api_key = api_key
+        self.meta_data=meta_data
         self.llm = ChatOpenAI(
             temperature=0,
             model="gpt-4o",
@@ -30,25 +31,7 @@ class SummaryAgent:
         - For boolean fields, default to False only if the information is confidently not mentioned.
 
         Extract key information from this paper excerpt. Return a JSON object with these fields:
-        - first_author: First listed author's name on paper
-        - publication_date: Year that paper was published
-        - title: Paper title
-        - data_type: Type of data used in the study such as radiology, clinicopathologic, or text
-        - species_breed: Target species
-        - ml_algorithm: Types Model used in the study
-        - ai_goal: Clinical objective of the study
-        - clinical_implementation: Boolean. Set true if study was actually deployed and adopted in real life.
-        - external_training_data: Boolean. Set True if external datasets such as data from multiple sources are used
-        - external_validation_data: Boolean. Set to True if the model has been evaluated using external datasets or data from other sources. 
-        - small_dataset: Boolean. Set to True if the paper mentions lack of data OR if the data used to train the model is less than 1000 samples
-        - small_dataset_techniques: In cases of limited data, mention methods that authors use to mitigate the issue—such as transfer learning, data augmentation, and similar techniques.
-        - data_heterogeneity: Mention of the authors use heterogeneous data or attempt to add variability through different types of data, data from various sources, different collection processes, or any other methods that could increase heterogeneity.
-        - preprocessing: Data preprocessing techniques used to to handel the noise, or missing data, or class imbalance
-        - regularization: regularization techniques used to stop model from overfiting such as early stopping, dropout or l1 and l2 regularization
-        - black_box_status: Boolean. Set to True if the model lacked explainability methods such as feature importance, Grad-CAM, or other means of providing interpretability.
-        - evaluation_metrics: Performance metrics used for evaluting the model
-        - performance_results: Key final performance results
-        - ethics: Ethical implications discussed by the authors
+        {self.meta_data}
         
         Return concise JSON only, no explanations.
         """),

@@ -107,7 +107,7 @@ class CLI:
             config = self.load_config(config_path)
             
             # Initialize agent
-            agent = SummaryAgent(config['openai_api_key'])
+            agent = SummaryAgent(config['openai_api_key'],config['meta_data'])
             
             # Get paper paths
             paper_paths = self.get_paper_paths(config['papers_directory'])
