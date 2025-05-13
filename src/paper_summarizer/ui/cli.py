@@ -61,7 +61,6 @@ class CLI:
         columns = [
             ("Title", "cyan"),
             ("First Author", "green"),
-            ("Journal", "yellow"),
             ("Publication Date", "blue"),
             ("AI Goal", "magenta"),
             ("ML Algorithm", "blue"),
@@ -82,7 +81,6 @@ class CLI:
             table.add_row(
                 str(result.get('title', 'N/A'))[:100],
                 str(result.get('first_author', 'N/A'))[:50],
-                str(result.get('journal', 'N/A')),
                 str(result.get('publication_date', 'N/A')),
                 str(result.get('ai_goal', 'N/A'))[:100],
                 str(result.get('ml_algorithm', 'N/A'))[:50],

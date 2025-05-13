@@ -1,4 +1,4 @@
 # Configuration file for Paper Summarizer
-openai_api_key: "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"
+openai_api_key: ""
 papers_directory: "./papers" 
 output_directory: "./output"
