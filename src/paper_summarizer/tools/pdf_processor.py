@@ -11,8 +11,8 @@ class PDFProcessor:
     def __init__(self, api_key):
         self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,  # Reduced chunk size
-            chunk_overlap=100,  # Reduced overlap
+            chunk_size=2000,  
+            chunk_overlap=200,  
             separators=["\n\n", "\n", ".", "!", "?", ";", " ", ""]
         )
         # Initialize tokenizer for GPT-4
@@ -24,6 +24,9 @@ class PDFProcessor:
     
     def process(self, file_path):
         """Process a PDF file and return chunked text with embeddings"""
+
+
+        print(f"The path in process: {file_path}")
         
                 
         try:

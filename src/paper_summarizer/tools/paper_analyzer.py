@@ -33,7 +33,7 @@ class PaperAnalyzer:
         
         
         analysis_prompt = f"""
-        Be thorough and precise in your analysis. Search for both explicit and implicit information and follow the instructions.
+        You are an expert at analyzing academic papers. Extract key information accurately. Be thorough and precise in your analysis. Search for both explicit and implicit information and follow the instructions.
 
         Instructions:
         - Don't add any knowledge from yourself, and don't make assumptions. Only rely on the information provided in the paper
