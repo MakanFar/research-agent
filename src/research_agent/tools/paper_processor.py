@@ -3,7 +3,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
-class PDFProcessor:
+class PaperProcessor:
     def __init__(self, api_key):
         self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -14,14 +14,15 @@ class PDFProcessor:
 
 
     
-    def process(self, file_path):
+    def process_pdf(self, file_path):
         """Process a PDF file and return chunked text with embeddings"""
                 
         try:
 
+
             loader = PyPDFLoader(file_path)
             pages = loader.load()
-    
+        
 
             chunks = self.text_splitter.split_documents(pages)
 
@@ -71,5 +72,20 @@ class PDFProcessor:
         except Exception as e:
         
             return f"Error processing PDF {file_path}: {str(e)}"
+        
+
+    def filter_(self, paper):
+        try:
+
+            chunks = self.text_splitter.split_documents(paper)
+            print(chunks)
+            
+            # Return both chunks and vectorstore for semantic search
+            return chunks
+    
+        except Exception as e:
+        
+            return f"Error processing paper {paper}: {str(e)}"
+
             
        

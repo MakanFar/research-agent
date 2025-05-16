@@ -1,7 +1,7 @@
 import json
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from ..tools.pdf_processor import PDFProcessor
+from ..tools.paper_processor import PaperProcessor
 from pathlib import Path
 
 class SummaryAgent:
@@ -13,8 +13,9 @@ class SummaryAgent:
             model="gpt-4o",
             openai_api_key=api_key
         )
-        self.pdf_processor = PDFProcessor(api_key)
+        self.pdf_processor = PaperProcessor(api_key)
         self.prompt = self._create_prompt()
+        self.prompt2 = self._create_filter_prompt()
     
     def _create_prompt(self):
         prompt = ChatPromptTemplate.from_messages([
@@ -39,14 +40,48 @@ class SummaryAgent:
         ])
         return prompt
     
-    def analyze_single_paper(self, path):
+    def _create_filter_prompt(self):
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", 
+            """
+            You are an expert research assistant helping a researcher find the most relevant academic papers for a specific research goal. Your job is to analyze paper abstracts and decide whether they are relevant to the user's objective.
+
+            Instructions:
+            - Carefully read the user's objective and the abstract.
+            - Determine whether the abstract is highly relevant to the user's stated goal.
+            - Be strict and conservative in your judgment—only return True if the abstract clearly aligns with the research objective.
+            - Do not make assumptions beyond what's written in the abstract.
+            - Return a JSON object like this:
+            
+            
+                "relevant": true or false,
+                "confidence": "high" | "medium" | "low",
+                "reason": "short explanation why the abstract matches or not"
+            
+            """),
+            ("user", 
+            """
+            Research Objective:
+            {objective}
+
+            Abstract:
+            {abstract}
+            """)
+        ])
+        return prompt
+    
+    def analyze_single_paper(self, path,type,objective):
         """Analyze a single paper and return structured summary"""
         try:
-           
-            combined_text =  self.pdf_processor.process(path)
-            
-            formatted_prompt = self.prompt.invoke({"input": combined_text})
-            # Use the agent to extract structured information
+            if type=="pdf":
+                combined_text =  self.pdf_processor.process(path)
+                
+                formatted_prompt = self.prompt.invoke({"input": combined_text})
+            else:
+                # Use the agent to extract structured information
+                combined_text =  self.pdf_processor.filter_(path)
+                formatted_prompt = self.prompt2.invoke({"objective":objective,"abstract": combined_text})
+
             result = self.llm.invoke(formatted_prompt)
             
             try:
@@ -90,18 +125,29 @@ class SummaryAgent:
                 "file": path
             }
  
-    def analyze_papers(self, paper_paths):
+    def analyze_papers(self, papers, type,objective):
         """Analyze multiple papers sequentially and return structured summaries"""
         results = []
-        for path in paper_paths:
-            try:
-                path = Path(path).resolve()
-                result = self.analyze_single_paper(path)
-                results.append(result)
-            except Exception as e:
-                results.append({
-                    "error": str(e),
-                    "file": path
-                })
+        if type=='pdf':
+            for path in papers:
+                try:
+                    path = Path(path).resolve()
+                    result = self.analyze_single_paper(path,type,None)
+                    results.append(result)
+                except Exception as e:
+                    results.append({
+                        "error": str(e),
+                        "file": path
+                    })
+        else:
+            for paper in papers:
+                try:
+                    result = self.analyze_single_paper(paper['body'],type,objective)
+                    results.append(result)
+                except Exception as e:
+                    results.append({
+                        "error": str(e),
+                        "file": paper
+                    })
         
         return results
