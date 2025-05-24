@@ -83,11 +83,12 @@ With Research Agent, you can:
 
 2. **Install dependencies**
    ```bash
-   pip install -e
+   pip install .
 
 3. **Set your OpenAI API Key**
 Add it to config.yaml:
     ```bash
+
     openai_api_key: sk-...
 
 
@@ -109,7 +110,7 @@ extract_fields:
 
 From the terminal, run:
     ```bash
-    python -m research_agent 
+    research_agent 
 
 This will display a structured summary table of the paper’s keycontent in the terminal, and save the same information as a JSON file if an output path.
 
