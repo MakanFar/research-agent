@@ -1,8 +1,4 @@
-from .ui.cli import CLI
-
-def main():
-    cli = CLI()
-    cli.run()
+from research_agent.ui.cli import app
 
 if __name__ == "__main__":
-    main()
+    app()

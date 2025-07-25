@@ -1,131 +1,145 @@
-import yaml
+import typer 
 import os
 import json
+import asyncio
+import time
 from rich.console import Console
-from rich.table import Table
 from rich.prompt import Prompt
-from rich.progress import Progress
+from rich import print
+
 from ..agents.summary_agent import SummaryAgent
-from ..retrievers.semantic_scholar import SemanticScholarSearch
-# from ..retrievers.semantic_scholar import SemanticScholarSearch  # Uncomment and import your retriever
+from ..retrievers.pubmed_central import PubMedCentralSearch
+from ..utils.enums import Database, SortOrder, Task
+from ..logger.logger import Logger
+from ..config.config import config
+from ..utils.paper_processor import convert2doc
 
-class CLI:
-    def __init__(self):
-        self.console = Console()
+# Initialize logger
+logger = Logger().get_logger()
+log_timer = Logger().log_execution_time
 
-    def load_config(self, config_path="config.yaml"):
-        try:
-            with open(config_path, 'r') as f:
-                config = yaml.safe_load(f)
+# Create Typer app
+app = typer.Typer(
+    name="papers-cli",
+    help="A CLI to retrieve and analyze research papers.",
+    add_completion=True,
+    no_args_is_help=True
+)
 
-            required_keys = ['openai_api_key', 'papers_directory', 'output_directory']
-            missing_keys = [key for key in required_keys if key not in config]
+console = Console()
+config = config.load_config("config.yaml")
 
-            if missing_keys:
-                raise ValueError(f"Missing required configuration keys: {', '.join(missing_keys)}")
+@log_timer
+def get_paper_paths(directory: str):
+    paper_paths = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.lower().endswith(".pdf"):
+                file_path = os.path.abspath(os.path.join(root, file))
+                if os.path.isfile(file_path):
+                    paper_paths.append(file_path)
+                else:
+                    msg = f"File not accessible: {file_path}"
+                    logger.warning(msg)
+                    console.print(f"[yellow]Warning: {msg}")
 
-            return config
+    if not paper_paths:
+        msg = f"No PDF files found in {directory}"
+        logger.warning(msg)
+        console.print(f"[yellow]Warning: {msg}")
+    return paper_paths
 
-        except FileNotFoundError:
-            raise Exception(f"Configuration file not found: {config_path}")
-        except yaml.YAMLError as e:
-            raise Exception(f"Error parsing configuration file: {str(e)}")
+@log_timer
+def fetch_online(query, sort, max_results, database):
+    if database == Database.pubmed:
+        papers = PubMedCentralSearch(query, sort, max_results).search()
+    else:
+        msg = f"Currently only PubMed Central is supported"
+        logger.error(msg)
+        console.print(f"[bold red]Warning: {msg}")
+        raise typer.Exit()
 
-    def get_paper_paths(self, directory):
-        paper_paths = []
-        for root, _, files in os.walk(directory):
-            for file in files:
-                if file.lower().endswith('.pdf'):
-                    file_path = os.path.abspath(os.path.join(root, file))
-                    if os.path.isfile(file_path):
-                        paper_paths.append(file_path)
-                    else:
-                        self.console.print(f"[yellow]Warning: File not accessible: {file_path}")
+    if not papers:
+        msg = "No papers found!"
+        logger.error(msg)
+        console.print(f"[bold red]{msg}")
+        raise typer.Exit()
 
-        if not paper_paths:
-            self.console.print(f"[yellow]Warning: No PDF files found in {directory}")
-        return paper_paths
+    articles = convert2doc(papers)
+    return articles
 
-    def display_results(self, results, output_dir):
-        table = Table(title="Paper Summaries", show_lines=True)
-        print(results)
-        for result in results:
-            if isinstance(result, dict) and 'error' not in result:
-                columns = list(result.keys())
-                break
-        else:
-            self.console.print("[red]No valid results to display.")
-            return
+@log_timer
+def save_results(results, output_dir, _type):
+    if isinstance(results, dict):
+        results = [results]
 
-        for col in columns:
-            table.add_column(col.replace("_", " ").title(), overflow="fold")
-
-        for result in results:
-            if isinstance(result, dict) and 'error' in result:
-                self.console.print(f"[red]Error processing {result['file']}: {result['error']}")
-                continue
-            row = [str(result.get(col, 'N/A'))[:100] for col in columns]
-            table.add_row(*row)
-
-        self.console.print(table)
-
+    if _type == "filter":
+        output_file = os.path.join(output_dir, "paper_screenings.json")
+    else:
         output_file = os.path.join(output_dir, "paper_summaries.json")
-        with open(output_file, 'w') as f:
-            json.dump(results, f, indent=2)
 
-        self.console.print(f"\n[green]Results saved to:\n- JSON: {output_file}")
+    with open(output_file, "w") as f:
+        json.dump(results, f, indent=2)
 
-    def retrieve_papers(self, query, sort, objective ,max_results=10, type="abstract"):
-        """Stub for integrating actual paper retrieval logic"""
-        test = [
-            {
-                'title': 'Machine Learning for Healthcare Radars: Recent Progresses in Human Vital Sign Measurement and Activity Recognition',
-                'href': 'https://ieeexplore.ieee.org/ielx7/9739/5451756/10322785.pdf',
-                'body': 'The unprecedented non-contact, non-invasive, and privacy-preserving nature of radar sensors has enabled various healthcare applications, including vital sign monitoring, fall detection, gait analysis, activity recognition, fitness evaluation, and sleep monitoring. Machine learning (ML) is revolutionizing every domain, with radar-based healthcare being no exception. Progress in the field of healthcare radars and ML is complementing the existing radar-based healthcare industry. This article provides an overview of ML usage for two major healthcare applications: vital sign monitoring and activity recognition. Vital sign monitoring is the most promising healthcare application of radar, as it can predict several chronic cardiac and respiratory diseases. Activity recognition is also a prominent application since the inability to perform activities may result in critical suffering. The article presents an overview of commercial radars, radar hardware, and historical progress of healthcare radars, followed by the usage of ML for healthcare radars. Subsequently, the paper discusses how ML can overcome the limitations of conventional radar data processing chains for healthcare radars. The article also touches upon recent generative ML concepts used in healthcare radars. Among several interesting findings, it was discovered that ML does not completely replace existing vital sign monitoring algorithms; rather, ML is deployed to overcome the limitations of traditional algorithms. On the other hand, activity recognition always relies on ML approaches. The most widely used algorithms for both applications are Convolutional Neural Network (CNN) followed by Support Vector Machine (SVM). Generative AI has the capability to augment data and is expected to have a significant impact soon. Recent trends, lessons learned from these trends, and future directions for both healthcare applications are presented in detail. Finally, the future work section discusses a wide range of healthcare topics for humans, ranging from neonates to elderly individuals.'
-            },
-            {
-                'title': 'Machine Learning for Healthcare-IoT Security: A Review and Risk Mitigation',
-                'href': 'https://ieeexplore.ieee.org/ielx7/6287639/6514899/10371310.pdf',
-                'body': 'The Healthcare Internet-of-Things (H-IoT), commonly known as Digital Healthcare, is a data-driven infrastructure that highly relies on smart sensing devices (i.e., blood pressure monitors, temperature sensors, etc.) for faster response time, treatments, and diagnosis. However, with the evolving cyber threat landscape, IoT devices have become more vulnerable to the broader risk surface (e.g., risks associated with generative AI, 5G-IoT, etc.), which, if exploited, may lead to data breaches, unauthorized access, and lack of command and control and potential harm. This paper reviews the fundamentals of healthcare IoT, its privacy, and data security challenges associated with machine learning and H-IoT devices. The paper further emphasizes the importance of monitoring healthcare IoT layers such as perception, network, cloud, and application. Detecting and responding to anomalies involves various cyber-attacks and protocols such as Wi-Fi 6, Narrowband Internet of Things (NB-IoT), Bluetooth, ZigBee, LoRa, and 5G New Radio (5G NR). A robust authentication mechanism based on machine learning and deep learning techniques is required to protect and mitigate H-IoT devices from increasing cybersecurity vulnerabilities. Hence, in this review paper, security and privacy challenges and risk mitigation strategies for building resilience in H-IoT are explored and reported.'
-            }
-        ]
-        config = self.load_config("config.yaml")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-        agent = SummaryAgent(config['openai_api_key'], config['meta_data'],)
-        with Progress() as progress:
-                task = progress.add_task("[cyan]Analyzing papers...", total=len(test))
-                results = agent.analyze_papers(test,type,objective)
-                progress.update(task, advance=1)
-        return results
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+    logger.info(f"Results saved to {output_file}")
+    console.print(f"\n[green]Results saved to:\n- JSON: {output_file}")
 
-    def run(self, config_path="config.yaml"):
-        try:
-            config = self.load_config(config_path)
-            choice = Prompt.ask("\nDo you want to [bold green]retrieve[/bold green] new papers or use [bold yellow]local[/bold yellow] PDFs?", choices=["search", "local"], default="local")
+@app.command()
+def analyze(
+    task: Task = typer.Option(Task.meta,prompt=True, help="Type of review: 'meta' for meta-analysis, 'systematic' for systematic review"),
+    #Source: Fetch = typer.Option(Fetch.online,prompt=True, help="Method to retrive papers [online|local]"),
+    filter_papers: bool = typer.Option(True,help="Filter papers before analysis"),
+    output_dir: str = typer.Option("./output", help="Directory to save results"),
+    database: Database = typer.Option(Database.pubmed, help="Database to search [pubmed centeral|semantic]"),
+    query: str = typer.Option(None, help="Search query"),
+    objective: str = typer.Option(None, help="objective for abstract and title screening"),
+    sort: SortOrder = typer.Option(SortOrder.relevance,help="Sort order [relevance|citatio,n|date]"),
+    #directory: str = typer.Argument(None, help="Directory containing PDF files"),
+    max_results: int = typer.Option(1000, help="Maximum number of papers to retrieve")
+    ):
+    """
+    Retrieve papers online and perform analysis.
+    """
+    api_key = os.environ.get("OPENAI_API_KEY",config["OPENAI_API_KEY"])
 
-            if choice == "search":
-                query = Prompt.ask("Enter your search query", default=None)
-                sort = Prompt.ask("Sort by", choices=["relevance", "citation", "date"], default="relevance")
-                objective = Prompt.ask("Enter your objective", default=None)
+    agent = SummaryAgent(api_key, config["meta_data"])
 
-                results = self.retrieve_papers(query=query, sort=sort,objective=objective)
-                
+    console.print(f"[cyan]Retrieving papers from {database}...[/cyan]")
+    
 
-            else:# Fallback to local summarization logic
-                agent = SummaryAgent(config['openai_api_key'], config['meta_data'])
-                paper_paths = self.get_paper_paths(config['papers_directory'])
+    _query = config.get("search_query",query)
 
-                if not paper_paths:
-                    self.console.print("[red]No PDF files found in the specified directory!")
-                    return
+    if not _query:
+        _query = Prompt.ask("Enter your search query")
 
-                with Progress() as progress:
-                    task = progress.add_task("[cyan]Analyzing papers...", total=len(paper_paths))
-                    results = agent.analyze_papers(paper_paths)
-                    progress.update(task, advance=1)
+    logger.info(f"Querying database: {database} with query: {query}")
 
-            os.makedirs(config['output_directory'], exist_ok=True)
-            self.display_results(results, config['output_directory'])
+    articles = fetch_online(_query, sort, max_results, database)
 
-        except Exception as e:
-            self.console.print(f"[red]Error: {str(e)}")
+    if filter_papers:
+        console.print("[cyan]Screening papers...[/cyan]")
+        if not objective:
+            objective = Prompt.ask("Enter your objective for screening")
+
+        filtered_results, filtered_articles = asyncio.run(agent.filter_papers(articles, objective))
+        logger.info(f"Screened {len(filtered_articles)} articles.")
+        console.print(f"[green]Screening complete.")
+
+        os.makedirs(output_dir, exist_ok=True)
+        save_results(filtered_results, output_dir, "filter")
+    else:
+        filtered_articles = articles
+
+    if task == Task.meta:
+        console.print("[green]Performing meta-analysis...[/green]")
+        summary_results = asyncio.run(agent.meta_analysis(filtered_articles))
+        logger.info(f"Meta-analysis complete.")
+        console.print(f"[green]Meta-analysis complete.")
+
+    elif task == Task.systematic:
+        console.print("[green]Performing systematic review...[/green]")
+        summary_results = asyncio.run(agent.systematic_review(filtered_articles))
+        logger.info(f"Systematic review complete.")
+        console.print(f"[green]Systematic review complete.")
+
+    save_results(summary_results, output_dir, "summary")

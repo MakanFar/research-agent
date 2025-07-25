@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: research_agent
+Version: 0.1.0
+License-File: LICENSE
+Requires-Dist: langchain
+Requires-Dist: openai
+Requires-Dist: rich
+Requires-Dist: langchain-community
+Requires-Dist: langchain-openai
+Dynamic: license-file
+Dynamic: requires-dist
