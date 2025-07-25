@@ -2,7 +2,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from ..utils.paper_processor import PaperProcessor
-from ..tools.utils import util
 from ..agents.prompts import PromptManager
 from pathlib import Path
 from ..utils.validators import metaAnalysisModel, FilterModel, SystematicReviewModel
