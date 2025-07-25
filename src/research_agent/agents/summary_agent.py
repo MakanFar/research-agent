@@ -250,7 +250,11 @@ class SummaryAgent:
 
                 result_dict = result.dict() if hasattr(result, "dict") else result
 
-                result_dict["meta_data"] = dict(list(paper.metadata.items())[:-1])
+                existing_meta = result_dict.get("meta_data", {})
+                new_meta = dict(list(paper.metadata.items())[:-1])
+
+                existing_meta.update(new_meta)
+                result_dict["meta_data"] = existing_meta
 
                 final_results.append(result_dict)
 
