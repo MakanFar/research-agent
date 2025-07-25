@@ -18,7 +18,7 @@
   <h3 align="center">Research Agent</h3>
 
   <p align="center">
-    A lightweight CLI tool that summarizes research papers using LangChain and OpenAI.
+    An agent that retrieves, screens, and summarizes research papers using OpenAI and LangChain.
     <br />
     <a href="https://github.com/MakanFar/research-agent"><strong>Explore the Docs »</strong></a>
     <br />
@@ -29,11 +29,11 @@
   </p>
 </div>
 
-<!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
     <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#features">Features</a></li>
     <li><a href="#built-with">Built With</a></li>
     <li><a href="#getting-started">Getting Started</a></li>
     <li><a href="#usage">Usage</a></li>
@@ -46,23 +46,21 @@
 
 ## 🚀 About The Project
 
-Summarizing scientific papers can be painfully time-consuming. Reading dozens of full-length PDFs, extracting key details, and synthesizing them into a review takes hours of mental effort. That’s why I built **Research Agent** — a command-line tool designed to automate that process.
+Summarizing scientific literature is time-consuming. Research Agent automates this process:
 
-With Research Agent, you can:
-
-- 🔍 **Find** relevant papers (coming soon)
-- 🧹 **Filter** them by quality or custom criteria
-- 📖 **Extract structured metadata** 
-- 🧾 Output a json or **summary table** of content
+- 🔍 Retrieves papers from PubMed Central
+- 📄 Screens abstracts using your review objective
+- 📊 Performs structured meta-analysis or systematic review
+- 💾 Outputs clean JSON with summaries and metadata
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🛠️ Built With
 
 - [LangChain](https://www.langchain.com/)
-- [OpenAI GPT-4](https://platform.openai.com/)
-- [FAISS](https://github.com/facebookresearch/faiss)
-- [PyPDFLoader](https://python.langchain.com/docs/modules/data_connection/document_loaders/pdf)
+- [OpenAI GPT-4o](https://platform.openai.com/)
+- [Typer CLI](https://typer.tiangolo.com/)
+- [Rich](https://rich.readthedocs.io/)
 - [Python 3.10+](https://www.python.org/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -71,70 +69,155 @@ With Research Agent, you can:
 
 ### Prerequisites
 
-- Python 3.10+
-- OpenAI API Key
+- Python 3.10 or higher
+- An OpenAI API key [Get the key!](https://openai.com/api/)
+- A NCBI API key [Get the key!](https://support.nlm.nih.gov/kbArticle/?pn=KA-05317)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/MakanFar/research-agent.git
-   cd research-agent
+```bash
+git clone https://github.com/MakanFar/research-agent.git
+cd research-agent
+pip install .
+```
 
-2. **Install dependencies**
-   ```bash
-   pip install .
+### Configuration
 
-3. **Set your OpenAI API Key**
-Add it to config.yaml:
-    ```bash
+Edit or create `config.yaml` in the root directory:
 
-    openai_api_key: sk-...
+#### 🔑 API Keys
+- you can add your API keys to the config:
+  
+```yaml
+OPENAI_API_KEY: sk-...
+NCBI_API_KEY: ...
+```
+
+Alternatively, you can export them as environment variables:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export NCBI_API_KEY=...
+```
+
+#### 🔍 Default Search Query
+Specify a PubMed Central query:
+
+```yaml
+search_query: ("Artificial intelligence"[Title/Abstract] AND "Protein-protein interaction")
+```
+You can also provide the query directly via the CLI at runtime.
 
 
-(Optional) Adjust config
-Configure fields you want extracted:
-extract_fields:
-  - first_author
-  - publication_date
-  - title
-  - data_type
-  - species_breed
-  - ml_algorithm
-  - ai_goal
+#### 🧾 Metadata Extraction (from abstracts)
+Customize fields to extract during meta-analysis or systematic review:
+
+```yaml
+meta_data:
+     - data_type: Type of data used in the study such as radiology, clinicopathologic, or text
+    - species_breed: Target species
+    - ml_algorithm: Types Model used in the study
+    - ai_goal: Clinical objective of the study
+    - performance_results: Key final performance results
+```
+Note: The agent always extracts the following by default:
+
+- Year
+- First Author
+- Title
+- Journal
+- PMCID
+- URL
+
+
+#### 📘 Full-Text Extraction (systematic review only)
+Optional deep extraction from full papers:
+
+```yaml
+in_depth:
+  - small_dataset: Short explanation if fewer than ~1000 samples OR authors mention limited data.
+```
+
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 📌 Usage
 
+### Run the CLI
+```bash
+research_agent analyze
+```
 
-From the terminal, run:
-    ```bash
-    research_agent 
+You will be prompted to:
+- Select a review type: `meta` or `systematic`
+- Enter a search query (or load from config.yaml)
+- Provide a screening objective (if filtering is enabled)
 
-This will display a structured summary table of the paper’s keycontent in the terminal, and save the same information as a JSON file if an output path.
+### Example
+```bash
+research_agent analyze \
+  --task meta \
+  --objective "AI for diagnosing UTIs in dogs" \
+  --filter-papers True \
+  --max-results 100 \
+  --output-dir ./output
+```
+
+### Outputs
+
+- `paper_screenings.json`: Results of the screening step
+```json
+{
+    "relevant": false,
+    "reason": "The study does not involve the application of AI techniques such as machine learning or deep learning",
+    "confidence": "High",
+    "pmc": "PMC9554590",
+    "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9554590/",
+    "title": "Contrast-enhanced ultrasound features of focal pancreatic lesions in cats",
+    "Author": "Silvia Burti",
+    "year": "2022",
+    "journal": "Frontiers in Veterinary Science"
+  }
+```
+
+- `paper_summaries.json`: Meta-analysis or systematic review output
+
+```json
+  {
+    "meta_data": {
+      "pmc": "PMC11271534",
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11271534/",
+      "title": "Exploring deep learning strategies for intervertebral disc herniation detection on veterinary MRI",
+      "journal": "Scientific Reports",
+      "first_author": "Shoujin Huang",
+      "year": "2024"
+    },
+    "body_data": {
+      "small_dataset": "The study used 487 MRI images from 213 dogs, which is relatively small for deep learning applications.",
+    }
+  }
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🗺 Roadmap
 
- - [x] Summarization 
- - [x] Configurable metadata extraction
- - [ ] Paper finder and relevance scorer
- - [ ] Q&A with papers
+- [x] Paper screening and summarization
+- [x] Configurable metadata fields
+- [ ] Support local PDFs
+- [ ] Interactive Q&A over papers
+- [ ] Semantic Scholar and ArXiv support
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- LICENSE -->
-## License
+## 🧾 License
 
-Distributed under the Unlicense License. See `LICENSE` for more information.
+Distributed under the MIT License. See `LICENSE` for details.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 <!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
 [contributors-url]: https://github.com/othneildrew/Best-README-Template/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
@@ -147,20 +230,3 @@ Distributed under the Unlicense License. See `LICENSE` for more information.
 [license-url]: https://github.com/othneildrew/Best-README-Template/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/makan-farhoodi-470120133/
-[product-screenshot]: images/screenshot.png
-[Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
-[Next-url]: https://nextjs.org/
-[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
-[React-url]: https://reactjs.org/
-[Vue.js]: https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D
-[Vue-url]: https://vuejs.org/
-[Angular.io]: https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
-[Angular-url]: https://angular.io/
-[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
-[Svelte-url]: https://svelte.dev/
-[Laravel.com]: https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white
-[Laravel-url]: https://laravel.com
-[Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
-[Bootstrap-url]: https://getbootstrap.com
-[JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
-[JQuery-url]: https://jquery.com 
