@@ -216,3 +216,4 @@ Distributed under the MIT License. See `LICENSE` for details.
 <!-- MARKDOWN LINKS & IMAGES -->
 [license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
 [linkedin-url]: https://www.linkedin.com/in/makan-farhoodi-470120133/
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
